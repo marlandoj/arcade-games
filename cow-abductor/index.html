@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Cow Abductors — 3D UFO Farm Heist</title>
+<style>
+  :root{
+    --accent:#ff7a18; --accent2:#ffb347; --good:#46e36b; --bad:#ff4d4d;
+    --beam:#9ad0ff; --panel:rgba(10,12,20,.82); --ink:#eef3ff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;height:100%;overflow:hidden;background:#05060c;font-family:'Trebuchet MS',system-ui,sans-serif;color:var(--ink);}
+  #app{position:fixed;inset:0;}
+  canvas{display:block;}
+  .hud{position:fixed;inset:0;pointer-events:none;z-index:10;}
+  .hud > *{pointer-events:none;}
+
+  /* Top bar */
+  #topbar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;padding:14px 18px;gap:12px;}
+  .stat{background:var(--panel);border:1px solid rgba(255,255,255,.10);border-radius:14px;padding:8px 14px;backdrop-filter:blur(6px);box-shadow:0 6px 24px rgba(0,0,0,.4);}
+  .stat .label{font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.65;}
+  .stat .val{font-size:26px;font-weight:800;line-height:1;margin-top:2px;}
+  #score .val{color:var(--accent2);}
+  #timer .val{color:#fff;}
+  #timer.low .val{color:var(--bad);animation:pulse .6s infinite;}
+  @keyframes pulse{50%{opacity:.45;}}
+  #combo{align-self:center;text-align:center;opacity:0;transition:opacity .2s, transform .2s;transform:scale(.7);}
+  #combo.show{opacity:1;transform:scale(1);}
+  #combo .val{font-size:30px;color:var(--accent);text-shadow:0 0 18px var(--accent);}
+
+  /* Bottom-left bars */
+  #bars{position:absolute;left:18px;bottom:18px;width:230px;display:flex;flex-direction:column;gap:9px;}
+  .bar{background:var(--panel);border:1px solid rgba(255,255,255,.10);border-radius:12px;padding:7px 10px;backdrop-filter:blur(6px);}
+  .bar .row{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.8;margin-bottom:5px;}
+  .track{height:11px;border-radius:8px;background:rgba(255,255,255,.10);overflow:hidden;}
+  .fill{height:100%;width:100%;border-radius:8px;transition:width .12s linear;}
+  #healthFill{background:linear-gradient(90deg,#ff4d4d,#ff8a3d);}
+  #energyFill{background:linear-gradient(90deg,#3da5ff,#9ad0ff);}
+  #boostFill{background:linear-gradient(90deg,#b14dff,#ff6ec7);}
+
+  /* Status effects */
+  #effects{position:absolute;left:18px;bottom:140px;display:flex;flex-direction:column;gap:6px;}
+  .fx{background:var(--panel);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:5px 10px;font-size:12px;font-weight:700;display:flex;gap:8px;align-items:center;}
+
+  /* Minimap */
+  #minimap{position:absolute;right:18px;bottom:18px;width:172px;height:172px;border-radius:14px;background:var(--panel);border:1px solid rgba(255,255,255,.12);backdrop-filter:blur(6px);box-shadow:0 6px 24px rgba(0,0,0,.4);}
+  #minimap canvas{border-radius:14px;}
+  #miniLabel{position:absolute;right:24px;bottom:194px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;opacity:.5;}
+
+  /* Center toast */
+  #toast{position:absolute;top:33%;left:50%;transform:translate(-50%,-50%) scale(.9);font-size:44px;font-weight:900;text-align:center;opacity:0;transition:opacity .25s,transform .25s;text-shadow:0 4px 30px rgba(0,0,0,.7);}
+  #toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+
+  /* Floating score popups */
+  .pop{position:absolute;font-weight:900;font-size:20px;pointer-events:none;text-shadow:0 2px 8px rgba(0,0,0,.7);transform:translate(-50%,-50%);transition:transform .9s ease-out, opacity .9s ease-out;z-index:9;}
+
+  /* Screens */
+  .screen{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;flex-direction:column;
+    background:radial-gradient(ellipse at 50% 20%, rgba(40,30,60,.55), rgba(3,4,10,.92));backdrop-filter:blur(4px);text-align:center;padding:24px;}
+  .screen.hidden{display:none;}
+  .logo{font-size:clamp(40px,9vw,86px);font-weight:900;letter-spacing:-1px;line-height:.95;
+    background:linear-gradient(180deg,#fff,var(--accent2) 70%,var(--accent));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 6px 30px rgba(255,122,24,.45));}
+  .tag{opacity:.8;margin:10px 0 4px;font-size:clamp(14px,2.4vw,18px);max-width:560px;}
+  .ufo-emoji{font-size:54px;filter:drop-shadow(0 0 22px var(--beam));animation:hover 2.4s ease-in-out infinite;}
+  @keyframes hover{50%{transform:translateY(-10px);}}
+  .btn{pointer-events:auto;cursor:pointer;border:none;border-radius:14px;padding:14px 30px;font-size:18px;font-weight:800;color:#1a1008;
+    background:linear-gradient(180deg,var(--accent2),var(--accent));box-shadow:0 8px 26px rgba(255,122,24,.4);transition:transform .08s, filter .15s;margin-top:6px;}
+  .btn:hover{filter:brightness(1.08);} .btn:active{transform:translateY(2px);}
+  .btn.ghost{background:transparent;border:1.5px solid rgba(255,255,255,.3);color:var(--ink);box-shadow:none;font-size:15px;padding:10px 20px;}
+  .diff{display:flex;gap:10px;margin:16px 0 4px;flex-wrap:wrap;justify-content:center;}
+  .diff button{pointer-events:auto;cursor:pointer;border-radius:12px;border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:var(--ink);
+    padding:10px 18px;font-weight:800;font-size:15px;transition:.15s;}
+  .diff button.sel{border-color:var(--accent);background:rgba(255,122,24,.18);box-shadow:0 0 0 3px rgba(255,122,24,.18) inset;}
+  .diff small{display:block;font-weight:500;opacity:.6;font-size:11px;margin-top:3px;}
+  .help{max-width:540px;margin:18px auto 0;display:grid;grid-template-columns:repeat(2,1fr);gap:8px 18px;font-size:14px;opacity:.88;}
+  .help .k{display:inline-block;min-width:64px;padding:2px 8px;border-radius:7px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);font-weight:800;font-size:12px;margin-right:8px;}
+  .stats-grid{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:12px 26px;margin:18px 0;}
+  .stats-grid .s .n{font-size:30px;font-weight:900;color:var(--accent2);}
+  .stats-grid .s .t{font-size:12px;letter-spacing:.12em;text-transform:uppercase;opacity:.6;}
+  .best{color:var(--good);font-weight:800;margin-top:4px;}
+  #muteBtn{position:fixed;top:14px;right:50%;transform:translateX(50%);z-index:31;pointer-events:auto;cursor:pointer;
+    background:var(--panel);border:1px solid rgba(255,255,255,.14);color:var(--ink);border-radius:10px;padding:6px 10px;font-size:16px;}
+  .credit{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;opacity:.4;z-index:31;}
+
+  /* Mobile controls */
+  #touch{position:fixed;inset:0;z-index:20;display:none;pointer-events:none;}
+  #touch.on{display:block;}
+  #joy{position:absolute;left:26px;bottom:120px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.18);pointer-events:auto;touch-action:none;}
+  #knob{position:absolute;left:35px;top:35px;width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.25);border:2px solid rgba(255,255,255,.4);}
+  .tbtn{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;color:#1a1008;
+    background:linear-gradient(180deg,var(--accent2),var(--accent));box-shadow:0 6px 18px rgba(0,0,0,.4);user-select:none;}
+  #tBeam{right:34px;bottom:170px;width:96px;height:96px;font-size:14px;}
+  #tWarp{right:140px;bottom:110px;width:74px;height:74px;font-size:13px;background:linear-gradient(180deg,#d79bff,#b14dff);color:#fff;}
+  @media (max-width:760px){
+    #bars{width:160px;} #minimap{width:128px;height:128px;} #miniLabel{display:none;}
+    .stat .val{font-size:20px;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- HUD -->
+<div class="hud" id="hud" style="display:none">
+  <div id="topbar">
+    <div class="stat" id="score"><div class="label">Score</div><div class="val">0</div></div>
+    <div class="stat" id="combo"><div class="label">Combo</div><div class="val">x2</div></div>
+    <div class="stat" id="timer"><div class="label">Time</div><div class="val">90</div></div>
+  </div>
+  <div id="effects"></div>
+  <div id="bars">
+    <div class="bar"><div class="row"><span>Hull</span><span id="healthTxt">100%</span></div><div class="track"><div class="fill" id="healthFill"></div></div></div>
+    <div class="bar"><div class="row"><span>Beam</span><span id="energyTxt">100%</span></div><div class="track"><div class="fill" id="energyFill"></div></div></div>
+    <div class="bar"><div class="row"><span>Warp</span><span id="boostTxt">100%</span></div><div class="track"><div class="fill" id="boostFill"></div></div></div>
+  </div>
+  <div id="miniLabel">Radar</div>
+  <div id="minimap"><canvas id="miniCanvas" width="172" height="172"></canvas></div>
+  <div id="toast"></div>
+</div>
+
+<!-- Touch controls -->
+<div id="touch">
+  <div id="joy"><div id="knob"></div></div>
+  <div class="tbtn" id="tBeam">BEAM</div>
+  <div class="tbtn" id="tWarp">WARP</div>
+</div>
+
+<button id="muteBtn" title="Mute">🔊</button>
+
+<!-- Start screen -->
+<div class="screen" id="startScreen">
+  <div class="ufo-emoji">🛸</div>
+  <div class="logo">COW<br>ABDUCTORS</div>
+  <div class="tag">You're a UFO over a midnight farm. Beam up the herd, dodge the farmer's buckshot, and grab as many cows as you can before the clock runs dry.</div>
+  <div class="diff" id="diffPick">
+    <button data-d="easy"><div>EASY</div><small>1 farmer · 100s · calm</small></button>
+    <button data-d="normal" class="sel"><div>NORMAL</div><small>2 farmers · 90s · classic</small></button>
+    <button data-d="hard"><div>HARD</div><small>3 farmers · 75s · brutal</small></button>
+  </div>
+  <button class="btn" id="playBtn">ABDUCT! 🛸</button>
+  <div class="help">
+    <div><span class="k">W A S D</span>Fly</div>
+    <div><span class="k">Space</span>Tractor beam</div>
+    <div><span class="k">Shift</span>Warp boost</div>
+    <div><span class="k">P / Esc</span>Pause</div>
+  </div>
+  <div class="best" id="startBest"></div>
+</div>
+
+<!-- Pause screen -->
+<div class="screen hidden" id="pauseScreen">
+  <div class="logo" style="font-size:clamp(34px,7vw,60px)">PAUSED</div>
+  <div class="tag">The cows aren't going anywhere. Probably.</div>
+  <button class="btn" id="resumeBtn">RESUME</button>
+  <button class="btn ghost" id="quitBtn">QUIT TO MENU</button>
+</div>
+
+<!-- Game over screen -->
+<div class="screen hidden" id="overScreen">
+  <div class="logo" id="overTitle" style="font-size:clamp(34px,7vw,64px)">TIME'S UP</div>
+  <div class="tag" id="overSub"></div>
+  <div class="stats-grid" id="overStats"></div>
+  <div class="best" id="overBest"></div>
+  <button class="btn" id="againBtn">FLY AGAIN 🛸</button>
+  <button class="btn ghost" id="menuBtn">MAIN MENU</button>
+</div>
+
+<div class="credit">Built on Zo · inspired by the Base44 "Cow Abductors" reel</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://esm.sh/three@0.160.0" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+/* ============================================================ *
+ *  COW ABDUCTORS — feature-rich 3D UFO farm heist
+ * ============================================================ */
+
+const WORLD = 130;           // half-size of the farm (square)
+const HOVER_Y = 14;          // UFO hover height
+const $ = (s)=>document.querySelector(s);
+const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+const rand=(a,b)=>a+Math.random()*(b-a);
+const lerp=(a,b,t)=>a+(b-a)*t;
+
+/* ---------- DIFFICULTY ---------- */
+const DIFF = {
+  easy:   {time:100, farmers:1, cows:26, bulletSpd:26, fireRate:2.6, dmg:9,  warpDrain:.5, label:'Easy'},
+  normal: {time:90,  farmers:2, cows:30, bulletSpd:32, fireRate:1.9, dmg:12, warpDrain:.6, label:'Normal'},
+  hard:   {time:75,  farmers:3, cows:34, bulletSpd:40, fireRate:1.35,dmg:16, warpDrain:.7, label:'Hard'},
+};
+let diff = DIFF.normal, diffKey='normal';
+
+/* ============================================================ *
+ *  AUDIO  (procedural Web Audio — no asset files)
+ * ============================================================ */
+const Sound = (()=>{
+  let ctx=null, master=null, muted=false, beamOsc=null, beamGain=null, ambient=null;
+  function ensure(){
+    if(ctx) return;
+    ctx = new (window.AudioContext||window.webkitAudioContext)();
+    master = ctx.createGain(); master.gain.value = .5; master.connect(ctx.destination);
+  }
+  function now(){return ctx.currentTime;}
+  function blip(freq=440,dur=.12,type='square',vol=.3,slideTo=null){
+    if(!ctx||muted) return;
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type;o.frequency.setValueAtTime(freq,now());
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,now()+dur);
+    g.gain.setValueAtTime(0,now());g.gain.linearRampToValueAtTime(vol,now()+.01);
+    g.gain.exponentialRampToValueAtTime(.0001,now()+dur);
+    o.connect(g);g.connect(master);o.start();o.stop(now()+dur+.02);
+  }
+  function noise(dur=.18,vol=.4,hp=600){
+    if(!ctx||muted) return;
+    const n=ctx.createBufferSource();
+    const buf=ctx.createBuffer(1,ctx.sampleRate*dur,ctx.sampleRate);
+    const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
+    n.buffer=buf;
+    const f=ctx.createBiquadFilter();f.type='highpass';f.frequency.value=hp;
+    const g=ctx.createGain();g.gain.value=vol;
+    n.connect(f);f.connect(g);g.connect(master);n.start();
+  }
+  return {
+    init(){ensure(); if(ctx.state==='suspended') ctx.resume();},
+    setMuted(m){muted=m; if(master) master.gain.setTargetAtTime(m?0:.5, now(), .02);},
+    isMuted(){return muted;},
+    abduct(combo=1){ blip(420+combo*40,.14,'sine',.28,820+combo*60); },
+    score(){ blip(660,.1,'triangle',.25,990); },
+    shoot(){ blip(180,.08,'sawtooth',.18,90); noise(.06,.12,1200); },
+    hit(){ noise(.22,.5,300); blip(110,.2,'square',.3,60); },
+    warp(){ blip(300,.3,'sawtooth',.2,1400); },
+    power(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>blip(f,.12,'triangle',.25),i*55)); },
+    click(){ blip(520,.05,'square',.15); },
+    over(win){ const seq=win?[523,659,784,1046,1318]:[440,330,260,180]; seq.forEach((f,i)=>setTimeout(()=>blip(f,.22,win?'triangle':'sawtooth',.28),i*120)); },
+    beamStart(){
+      if(!ctx||muted||beamOsc) return;
+      beamOsc=ctx.createOscillator();beamGain=ctx.createGain();
+      beamOsc.type='sawtooth';beamOsc.frequency.value=70;
+      const lfo=ctx.createOscillator(),lg=ctx.createGain();
+      lfo.frequency.value=11;lg.gain.value=18;lfo.connect(lg);lg.connect(beamOsc.frequency);
+      beamGain.gain.value=.0; beamGain.gain.setTargetAtTime(.12,now(),.05);
+      beamOsc.connect(beamGain);beamGain.connect(master);beamOsc.start();lfo.start();
+      beamOsc._lfo=lfo;
+    },
+    beamStop(){ if(beamOsc){ beamGain.gain.setTargetAtTime(0,now(),.05); const o=beamOsc,l=beamOsc._lfo; setTimeout(()=>{try{o.stop();l.stop();}catch(e){}},120); beamOsc=null;} },
+  };
+})();
+
+/* ============================================================ *
+ *  THREE SETUP
+ * ============================================================ */
+const app = $('#app');
+const renderer = new THREE.WebGLRenderer({antialias:true, powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+app.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0a1430);
+scene.fog = new THREE.Fog(0x0a1430, 90, 240);
+
+const camera = new THREE.PerspectiveCamera(58, innerWidth/innerHeight, 0.1, 600);
+
+/* lights */
+const moon = new THREE.DirectionalLight(0xbcd0ff, .9);
+moon.position.set(60,120,40); moon.castShadow=true;
+moon.shadow.mapSize.set(2048,2048);
+const sc=moon.shadow.camera; sc.left=-WORLD;sc.right=WORLD;sc.top=WORLD;sc.bottom=-WORLD;sc.near=1;sc.far=400;
+scene.add(moon);
+scene.add(new THREE.HemisphereLight(0x4a5a8a, 0x0a1020, .55));
+scene.add(new THREE.AmbientLight(0x223055, .4));
+
+/* ============================================================ *
+ *  ENVIRONMENT
+ * ============================================================ */
+// ground
+const groundGeo = new THREE.PlaneGeometry(WORLD*2,WORLD*2,1,1);
+const groundMat = new THREE.MeshStandardMaterial({color:0x1f3a22, roughness:1});
+const ground = new THREE.Mesh(groundGeo,groundMat); ground.rotation.x=-Math.PI/2; ground.receiveShadow=true;
+scene.add(ground);
+// field grid hint
+const grid = new THREE.GridHelper(WORLD*2, 52, 0x2c5230, 0x22401f); grid.position.y=.02; grid.material.opacity=.35; grid.material.transparent=true;
+scene.add(grid);
+
+// moon disc + stars
+const moonMesh = new THREE.Mesh(new THREE.CircleGeometry(16,32), new THREE.MeshBasicMaterial({color:0xfdf6d8}));
+moonMesh.position.set(-120,90,-200); scene.add(moonMesh);
+(function stars(){
+  const g=new THREE.BufferGeometry(); const n=900; const p=new Float32Array(n*3);
+  for(let i=0;i<n;i++){ const r=400; const a=Math.random()*Math.PI*2; const y=rand(40,260); const rr=rand(120,r);
+    p[i*3]=Math.cos(a)*rr; p[i*3+1]=y; p[i*3+2]=Math.sin(a)*rr - 60; }
+  g.setAttribute('position',new THREE.BufferAttribute(p,3));
+  scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xffffff,size:1.1,sizeAttenuation:true,transparent:true,opacity:.85})));
+})();
+
+const decor = new THREE.Group(); scene.add(decor);
+function woodMat(c){return new THREE.MeshStandardMaterial({color:c,roughness:.85});}
+
+function makeBarn(x,z,ry){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.BoxGeometry(16,9,11),woodMat(0x7a2b22)); body.position.y=4.5; body.castShadow=body.receiveShadow=true; g.add(body);
+  const roof=new THREE.Mesh(new THREE.CylinderGeometry(.01,8.1,6,4,1,false,Math.PI/4,Math.PI), new THREE.MeshStandardMaterial({color:0x5a1f18,roughness:.8}));
+  roof.scale.set(1,1,1.38); roof.rotation.y=Math.PI/2; roof.position.y=10.6; roof.castShadow=true; g.add(roof);
+  const door=new THREE.Mesh(new THREE.BoxGeometry(.2,5,4),woodMat(0x3a1410)); door.position.set(8.05,2.6,0); g.add(door);
+  g.position.set(x,0,z); g.rotation.y=ry; decor.add(g); return g;
+}
+function makeHouse(x,z,ry){
+  const g=new THREE.Group();
+  const body=new THREE.Mesh(new THREE.BoxGeometry(11,7,9),woodMat(0xcdbf9a)); body.position.y=3.5; body.castShadow=body.receiveShadow=true; g.add(body);
+  const roof=new THREE.Mesh(new THREE.ConeGeometry(8.4,4.5,4),woodMat(0x4b3b2a)); roof.rotation.y=Math.PI/4; roof.position.y=9.2; roof.castShadow=true; g.add(roof);
+  const win=new THREE.MeshStandardMaterial({color:0xffd86b,emissive:0xffb433,emissiveIntensity:.9});
+  for(const dx of [-2.5,2.5]){ const w=new THREE.Mesh(new THREE.BoxGeometry(.2,1.8,1.8),win); w.position.set(5.55,3.6,dx); g.add(w);}
+  g.position.set(x,0,z); g.rotation.y=ry; decor.add(g); return g;
+}
+function makeTree(x,z){
+  const g=new THREE.Group();
+  const t=new THREE.Mesh(new THREE.CylinderGeometry(.5,.8,5,6),woodMat(0x5a3a22)); t.position.y=2.5; t.castShadow=true; g.add(t);
+  const c=new THREE.Mesh(new THREE.IcosahedronGeometry(3.2,0),new THREE.MeshStandardMaterial({color:0x224b2a,roughness:.9,flatShading:true}));
+  c.position.y=6.4; c.castShadow=true; g.add(c);
+  g.position.set(x,0,z); g.scale.setScalar(rand(.8,1.4)); decor.add(g); return g;
+}
+function makeFence(x1,z1,x2,z2){
+  const dx=x2-x1,dz=z2-z1,len=Math.hypot(dx,dz),seg=Math.floor(len/3);
+  const post=woodMat(0x6b4a2e);
+  for(let i=0;i<=seg;i++){ const t=i/seg; const p=new THREE.Mesh(new THREE.BoxGeometry(.4,2.2,.4),post);
+    p.position.set(lerp(x1,x2,t),1.1,lerp(z1,z2,t)); p.castShadow=true; decor.add(p);}
+  const rail=new THREE.Mesh(new THREE.BoxGeometry(len,.3,.16),post);
+  rail.position.set((x1+x2)/2,1.5,(z1+z2)/2); rail.rotation.y=-Math.atan2(dz,dx); rail.castShadow=true; decor.add(rail);
+}
+const obstacles=[]; // {x,z,r} for collision/avoidance
+function buildFarm(){
+  while(decor.children.length) decor.remove(decor.children[0]);
+  obstacles.length=0;
+  const barns=[makeBarn(-55,-40,.3),makeBarn(48,52,-.5)];
+  const house=makeHouse(60,-50,2.2);
+  barns.forEach(b=>obstacles.push({x:b.position.x,z:b.position.z,r:11}));
+  obstacles.push({x:house.position.x,z:house.position.z,r:8});
+  // tree clusters
+  for(let i=0;i<22;i++){ const x=rand(-WORLD+10,WORLD-10),z=rand(-WORLD+10,WORLD-10);
+    if(Math.hypot(x,z)<22) continue; makeTree(x,z); obstacles.push({x,z,r:3});}
+  // fences forming a paddock
+  makeFence(-30,20,30,20); makeFence(-30,20,-30,-15); makeFence(30,20,30,-15); makeFence(-30,-15,30,-15);
+  makeFence(-WORLD+6,-WORLD+6,WORLD-6,-WORLD+6);
+}
+buildFarm();
+
+/* ============================================================ *
+ *  UFO
+ * ============================================================ */
+const ufo = new THREE.Group(); scene.add(ufo);
+(function buildUFO(){
+  const hull=new THREE.Mesh(new THREE.SphereGeometry(3.2,28,16,0,Math.PI*2,0,Math.PI/2),
+    new THREE.MeshStandardMaterial({color:0xb9c4d6,metalness:.85,roughness:.25}));
+  hull.scale.y=.42; hull.castShadow=true; ufo.add(hull);
+  const belly=new THREE.Mesh(new THREE.SphereGeometry(3.2,28,16,0,Math.PI*2,Math.PI/2,Math.PI/2),
+    new THREE.MeshStandardMaterial({color:0x7d8aa3,metalness:.8,roughness:.35}));
+  belly.scale.y=.32; ufo.add(belly);
+  const dome=new THREE.Mesh(new THREE.SphereGeometry(1.7,24,16),
+    new THREE.MeshStandardMaterial({color:0x8fe3ff,metalness:.2,roughness:.05,transparent:true,opacity:.55,emissive:0x2390c0,emissiveIntensity:.6}));
+  dome.position.y=.9; dome.scale.y=.8; ufo.add(dome);
+  // rim lights
+  const ring=new THREE.Group(); ufo.add(ring); ufo.userData.ring=ring;
+  for(let i=0;i<10;i++){ const a=i/10*Math.PI*2;
+    const c=new THREE.Mesh(new THREE.SphereGeometry(.34,12,10),new THREE.MeshStandardMaterial({color:0xffd36b,emissive:0xffb020,emissiveIntensity:1.4}));
+    c.position.set(Math.cos(a)*3.0,-.1,Math.sin(a)*3.0); ring.add(c);}
+})();
+const ufoLight = new THREE.PointLight(0x9ad0ff, 0, 60, 2); ufoLight.position.set(0,-1,0); ufo.add(ufoLight);
+
+// tractor beam
+const beamMat = new THREE.MeshBasicMaterial({color:0x9ad0ff,transparent:true,opacity:0,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,depthWrite:false});
+const beamRadius=9;
+const beam = new THREE.Mesh(new THREE.CylinderGeometry(.6,beamRadius,1,28,1,true), beamMat);
+beam.visible=false; scene.add(beam);
+const beamRingMat=new THREE.MeshBasicMaterial({color:0xbfe6ff,transparent:true,opacity:.0,blending:THREE.AdditiveBlending,depthWrite:false});
+const beamPad=new THREE.Mesh(new THREE.RingGeometry(.1,beamRadius,32),beamRingMat); beamPad.rotation.x=-Math.PI/2; beamPad.position.y=.06; scene.add(beamPad);
+
+/* ============================================================ *
+ *  COWS
+ * ============================================================ */
+const COW_TYPES = {
+  cow:    {color:0xf3f1ea, spot:0x222222, pts:1,  scale:1.0,  speed:3.2, abduct:1.0, weight:.5},
+  brown:  {color:0x9a6b3f, spot:0x5a3a22, pts:2,  scale:1.0,  speed:3.6, abduct:1.0, weight:.28},
+  golden: {color:0xffd86b, spot:0xffb020, pts:5,  scale:.92, speed:5.4, abduct:1.5, weight:.10, glow:true},
+  bull:   {color:0x3b3b40, spot:0x111114, pts:4,  scale:1.35, speed:2.4, abduct:2.6, weight:.12, angry:true},
+};
+function pickCowType(){ const r=Math.random(); let acc=0; for(const k in COW_TYPES){acc+=COW_TYPES[k].weight; if(r<=acc) return k;} return 'cow';}
+const cows=[];
+function buildCow(typeKey){
+  const T=COW_TYPES[typeKey]; const g=new THREE.Group();
+  const bodyMat=new THREE.MeshStandardMaterial({color:T.color,roughness:.8,emissive:T.glow?0xffb020:0x000000,emissiveIntensity:T.glow?.5:0});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(2.4,1.5,1.4),bodyMat); body.position.y=1.5; body.castShadow=true; g.add(body);
+  if(typeKey==='cow'||typeKey==='brown'){ for(let i=0;i<3;i++){ const s=new THREE.Mesh(new THREE.BoxGeometry(.6,.05,.5),new THREE.MeshStandardMaterial({color:T.spot}));
+    s.position.set(rand(-.7,.7),2.26,rand(-.4,.4)); g.add(s);} }
+  const head=new THREE.Mesh(new THREE.BoxGeometry(.9,.9,.9),bodyMat); head.position.set(1.5,1.7,0); head.castShadow=true; g.add(head);
+  const snout=new THREE.Mesh(new THREE.BoxGeometry(.4,.5,.6),new THREE.MeshStandardMaterial({color:0xf2b8c6})); snout.position.set(2.0,1.55,0); g.add(snout);
+  if(T.angry){ for(const dz of[-.35,.35]){ const horn=new THREE.Mesh(new THREE.ConeGeometry(.12,.5,6),new THREE.MeshStandardMaterial({color:0xeee}));
+    horn.position.set(1.6,2.25,dz); horn.rotation.z=-.5; g.add(horn);} }
+  const legMat=new THREE.MeshStandardMaterial({color:T.spot});
+  const legs=[];
+  for(const [lx,lz] of [[-.8,-.5],[-.8,.5],[.8,-.5],[.8,.5]]){ const l=new THREE.Mesh(new THREE.BoxGeometry(.32,1.5,.32),legMat); l.position.set(lx,.75,lz); l.castShadow=true; g.add(l); legs.push(l);}
+  g.scale.setScalar(T.scale); g.userData.legs=legs; return g;
+}
+function spawnCow(typeKey){
+  typeKey = typeKey||pickCowType();
+  const T=COW_TYPES[typeKey]; const m=buildCow(typeKey);
+  let x,z,tries=0; do{ x=rand(-WORLD+12,WORLD-12); z=rand(-WORLD+12,WORLD-12); tries++; }while(tries<10 && obstacles.some(o=>Math.hypot(x-o.x,z-o.z)<o.r+3));
+  m.position.set(x,0,z);
+  scene.add(m);
+  cows.push({m,type:typeKey,T,vx:rand(-1,1),vz:rand(-1,1),dir:rand(0,Math.PI*2),turn:rand(1.5,3.5),
+    lift:0, state:'wander', panic:0, baseY:0, phase:rand(0,6.28)});
+}
+function clearCows(){ cows.forEach(c=>scene.remove(c.m)); cows.length=0; }
+
+/* ============================================================ *
+ *  FARMERS + BULLETS
+ * ============================================================ */
+const farmers=[];
+function buildFarmer(){
+  const g=new THREE.Group();
+  const legMat=new THREE.MeshStandardMaterial({color:0x2b3a6b});
+  const body=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.8,.8),new THREE.MeshStandardMaterial({color:0x9a3b2e})); body.position.y=2.4; body.castShadow=true; g.add(body);
+  const head=new THREE.Mesh(new THREE.BoxGeometry(.85,.85,.85),new THREE.MeshStandardMaterial({color:0xe7b48f})); head.position.y=3.65; head.castShadow=true; g.add(head);
+  const hat=new THREE.Mesh(new THREE.CylinderGeometry(.55,.8,.4,12),new THREE.MeshStandardMaterial({color:0x6b4a2e})); hat.position.y=4.2; g.add(hat);
+  const brim=new THREE.Mesh(new THREE.CylinderGeometry(1.0,1.0,.08,14),new THREE.MeshStandardMaterial({color:0x6b4a2e})); brim.position.y=4.0; g.add(brim);
+  for(const lx of[-.35,.35]){ const l=new THREE.Mesh(new THREE.BoxGeometry(.4,1.6,.4),legMat); l.position.set(lx,.8,0); l.castShadow=true; g.add(l);}
+  const gun=new THREE.Mesh(new THREE.BoxGeometry(1.6,.2,.2),new THREE.MeshStandardMaterial({color:0x333})); gun.position.set(.9,2.6,.3); g.add(gun); g.userData.gun=gun;
+  return g;
+}
+function spawnFarmer(){
+  const m=buildFarmer();
+  let x,z; do{x=rand(-WORLD+15,WORLD-15);z=rand(-WORLD+15,WORLD-15);}while(Math.hypot(x,z)<30);
+  m.position.set(x,0,z); scene.add(m);
+  farmers.push({m,cd:rand(1.5,3),speed:rand(5,7)});
+}
+function clearFarmers(){ farmers.forEach(f=>scene.remove(f.m)); farmers.length=0; }
+
+// bullet pool
+const BMAX=80; const bullets=[];
+const bulletGeo=new THREE.SphereGeometry(.32,8,8);
+const bulletMat=new THREE.MeshStandardMaterial({color:0xffe27a,emissive:0xffaa20,emissiveIntensity:1.6});
+for(let i=0;i<BMAX;i++){ const m=new THREE.Mesh(bulletGeo,bulletMat); m.visible=false; scene.add(m); bullets.push({m,active:false,vx:0,vy:0,vz:0,life:0}); }
+function fireBullet(from,to,spread=0){
+  const b=bullets.find(b=>!b.active); if(!b) return;
+  const d=new THREE.Vector3().subVectors(to,from).normalize();
+  if(spread>0){ d.x+=rand(-spread,spread); d.y+=rand(-spread,spread)*.4; d.z+=rand(-spread,spread); d.normalize(); }
+  b.m.position.copy(from); b.active=true; b.life=3;
+  b.vx=d.x*diff.bulletSpd; b.vy=d.y*diff.bulletSpd; b.vz=d.z*diff.bulletSpd;
+  b.m.visible=true; Sound.shoot();
+  spawnParticles(from,4,0xffcf6b,8,.3);
+}
+
+/* ============================================================ *
+ *  POWERUPS
+ * ============================================================ */
+const POWER = {
+  repair: {color:0x46e36b, icon:'➕', label:'Hull Repair'},
+  time:   {color:0x66c6ff, icon:'⏱️', label:'+8 Seconds'},
+  overdrive:{color:0xff7a18, icon:'🔥', label:'Beam Overdrive'},
+  shield: {color:0x9b6bff, icon:'🛡️', label:'Shield'},
+  magnet: {color:0xff5fb0, icon:'🧲', label:'Cow Magnet'},
+};
+const powerups=[];
+function spawnPowerup(){
+  const keys=Object.keys(POWER); const key=keys[Math.floor(Math.random()*keys.length)]; const P=POWER[key];
+  const g=new THREE.Group();
+  const core=new THREE.Mesh(new THREE.IcosahedronGeometry(1.1,0),new THREE.MeshStandardMaterial({color:P.color,emissive:P.color,emissiveIntensity:.9,flatShading:true}));
+  g.add(core);
+  const halo=new THREE.Mesh(new THREE.TorusGeometry(1.7,.12,8,24),new THREE.MeshBasicMaterial({color:P.color,transparent:true,opacity:.7}));
+  halo.rotation.x=Math.PI/2; g.add(halo);
+  const light=new THREE.PointLight(P.color,1.2,18); g.add(light);
+  let x,z; do{x=rand(-WORLD+16,WORLD-16);z=rand(-WORLD+16,WORLD-16);}while(Math.hypot(x,z)<14);
+  g.position.set(x,5,z); scene.add(g);
+  powerups.push({m:g,key,P,t:0,life:16});
+}
+
+/* ============================================================ *
+ *  PARTICLES (pooled THREE.Points, additive)
+ * ============================================================ */
+const PMAX=600;
+const pPos=new Float32Array(PMAX*3), pCol=new Float32Array(PMAX*3);
+const pGeo=new THREE.BufferGeometry();
+pGeo.setAttribute('position',new THREE.BufferAttribute(pPos,3));
+pGeo.setAttribute('color',new THREE.BufferAttribute(pCol,3));
+const pSys=new THREE.Points(pGeo,new THREE.PointsMaterial({size:.55,vertexColors:true,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false,sizeAttenuation:true}));
+scene.add(pSys);
+const parts=[]; for(let i=0;i<PMAX;i++) parts.push({active:false,x:0,y:0,z:0,vx:0,vy:0,vz:0,life:0,max:1,r:1,g:1,b:1});
+const _c=new THREE.Color();
+function spawnParticles(pos,n,color,spread=10,life=.6){
+  _c.set(color);
+  for(let i=0;i<n;i++){ const p=parts.find(p=>!p.active); if(!p) break;
+    p.active=true; p.x=pos.x;p.y=pos.y;p.z=pos.z;
+    p.vx=rand(-spread,spread);p.vy=rand(0,spread);p.vz=rand(-spread,spread);
+    p.life=p.max=life*rand(.6,1.2); p.r=_c.r;p.g=_c.g;p.b=_c.b; }
+}
+function updateParticles(dt){
+  for(let i=0;i<PMAX;i++){ const p=parts[i];
+    if(p.active){ p.life-=dt; if(p.life<=0){p.active=false;} else {
+      p.vy-=14*dt; p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt; if(p.y<0){p.y=0;p.vy*=-.3;p.vx*=.6;p.vz*=.6;}
+      const f=p.life/p.max; pPos[i*3]=p.x;pPos[i*3+1]=p.y;pPos[i*3+2]=p.z; pCol[i*3]=p.r*f;pCol[i*3+1]=p.g*f;pCol[i*3+2]=p.b*f;
+    }}
+    if(!p.active){ pPos[i*3+1]=-9999; pCol[i*3]=pCol[i*3+1]=pCol[i*3+2]=0; }
+  }
+  pGeo.attributes.position.needsUpdate=true; pGeo.attributes.color.needsUpdate=true;
+}
+
+/* ============================================================ *
+ *  INPUT
+ * ============================================================ */
+const keys={};
+addEventListener('keydown',e=>{
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+  keys[e.key.toLowerCase()]=true;
+  if(e.key.toLowerCase()==='p'||e.key==='Escape'){ if(game.state==='play') pause(); else if(game.state==='pause') resume(); }
+});
+addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
+addEventListener('blur',()=>{ for(const k in keys) keys[k]=false; });
+
+// touch
+const isTouch = matchMedia('(pointer:coarse)').matches;
+const touchVec={x:0,y:0}; let touchBeam=false, touchWarp=false;
+function setupTouch(){
+  if(!isTouch) return;
+  $('#touch').classList.add('on');
+  const joy=$('#joy'),knob=$('#knob'); let jid=null,cx=0,cy=0;
+  joy.addEventListener('touchstart',e=>{const r=joy.getBoundingClientRect();cx=r.left+r.width/2;cy=r.top+r.height/2;jid=e.changedTouches[0].identifier;e.preventDefault();},{passive:false});
+  joy.addEventListener('touchmove',e=>{ for(const t of e.changedTouches){ if(t.identifier!==jid) continue;
+    let dx=t.clientX-cx,dy=t.clientY-cy; const m=Math.hypot(dx,dy),mx=55; if(m>mx){dx*=mx/m;dy*=mx/m;}
+    knob.style.left=(35+dx)+'px';knob.style.top=(35+dy)+'px'; touchVec.x=dx/mx;touchVec.y=dy/mx;} e.preventDefault();},{passive:false});
+  const end=e=>{for(const t of e.changedTouches){if(t.identifier===jid){jid=null;touchVec.x=touchVec.y=0;knob.style.left='35px';knob.style.top='35px';}}};
+  joy.addEventListener('touchend',end);joy.addEventListener('touchcancel',end);
+  const bind=(el,set)=>{el.addEventListener('touchstart',e=>{set(true);e.preventDefault();},{passive:false});
+    el.addEventListener('touchend',e=>{set(false);e.preventDefault();},{passive:false});};
+  bind($('#tBeam'),v=>touchBeam=v); bind($('#tWarp'),v=>touchWarp=v);
+}
+setupTouch();
+
+/* ============================================================ *
+ *  GAME STATE
+ * ============================================================ */
+const game = {
+  state:'menu', score:0, time:90, health:100, energy:100, boost:100,
+  combo:1, comboTimer:0, cowsGrabbed:0, best:+(localStorage.getItem('cowabd_best')||0),
+  shield:0, overdrive:0, magnet:0, shake:0,
+  powerTimer:8, escalation:0, vel:new THREE.Vector3(),
+};
+$('#startBest').textContent = game.best?('Best run: '+game.best+' pts'):'';
+
+function resetGame(){
+  clearCows(); clearFarmers(); powerups.forEach(p=>scene.remove(p.m)); powerups.length=0;
+  bullets.forEach(b=>{b.active=false;b.m.visible=false;});
+  buildFarm();
+  ufo.position.set(0,HOVER_Y,0); game.vel.set(0,0,0);
+  Object.assign(game,{score:0,time:diff.time,health:100,energy:100,boost:100,combo:1,comboTimer:0,
+    cowsGrabbed:0,shield:0,overdrive:0,magnet:0,shake:0,powerTimer:8,escalation:0});
+  for(let i=0;i<diff.cows;i++) spawnCow();
+  for(let i=0;i<diff.farmers;i++) spawnFarmer();
+  // golden cow guaranteed
+  spawnCow('golden');
+}
+
+function startGame(){
+  Sound.init();
+  diff=DIFF[diffKey];
+  resetGame();
+  game.state='play';
+  $('#hud').style.display='block';
+  $('#startScreen').classList.add('hidden');
+  $('#overScreen').classList.add('hidden');
+  $('#pauseScreen').classList.add('hidden');
+  toast('GO!', '#46e36b', 900);
+}
+function pause(){ if(game.state!=='play')return; game.state='pause'; $('#pauseScreen').classList.remove('hidden'); Sound.beamStop(); }
+function resume(){ if(game.state!=='pause')return; game.state='play'; $('#pauseScreen').classList.add('hidden'); }
+function toMenu(){ game.state='menu'; $('#hud').style.display='none'; $('#pauseScreen').classList.add('hidden'); $('#overScreen').classList.add('hidden'); $('#startScreen').classList.remove('hidden'); $('#startBest').textContent=game.best?('Best run: '+game.best+' pts'):''; Sound.beamStop(); }
+
+function gameOver(reason){
+  game.state='over'; Sound.beamStop();
+  const win = game.time<=0;
+  Sound.over(win && game.cowsGrabbed>0);
+  if(game.score>game.best){ game.best=game.score; localStorage.setItem('cowabd_best',game.best); }
+  $('#overTitle').textContent = reason==='shot' ? 'SHOT DOWN' : "TIME'S UP";
+  $('#overSub').textContent = reason==='shot'
+    ? 'The farmer got a clean hit on your hull. The herd lives to graze another night.'
+    : (game.cowsGrabbed>=20 ? 'Masterful abduction run. The mothership is proud.' :
+       game.cowsGrabbed>=8 ? 'Solid haul. The lab will be pleased.' : 'A modest harvest. Practice makes perfect.');
+  $('#overStats').innerHTML =
+    `<div class="s"><div class="n">${game.score}</div><div class="t">Score</div></div>`+
+    `<div class="s"><div class="n">${game.cowsGrabbed}</div><div class="t">Cows Abducted</div></div>`;
+  $('#overBest').textContent = (game.score>=game.best?'🏆 NEW BEST! ':'Best: ')+game.best+' pts';
+  $('#overScreen').classList.remove('hidden');
+}
+
+/* ---------- UI helpers ---------- */
+let toastTimer=null;
+function toast(txt,color='#fff',ms=1200){ const t=$('#toast'); t.textContent=txt; t.style.color=color; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),ms); }
+function popup(worldPos,text,color){
+  const v=worldPos.clone().project(camera);
+  const x=(v.x*.5+.5)*innerWidth, y=(-v.y*.5+.5)*innerHeight;
+  const el=document.createElement('div'); el.className='pop'; el.textContent=text; el.style.color=color;
+  el.style.left=x+'px'; el.style.top=y+'px'; document.body.appendChild(el);
+  requestAnimationFrame(()=>{ el.style.transform='translate(-50%,-50%) translateY(-60px)'; el.style.opacity='0'; });
+  setTimeout(()=>el.remove(),900);
+}
+
+/* ============================================================ *
+ *  UPDATE
+ * ============================================================ */
+const tmp=new THREE.Vector3(), tmp2=new THREE.Vector3();
+function update(dt){
+  // animate ambient stuff always
+  ufo.userData.ring.rotation.y += dt*1.2;
+  decor.children.forEach(()=>{});
+  if(game.state!=='play'){ updateParticles(dt); return; }
+
+  /* ---- timer ---- */
+  game.time-=dt;
+  if(game.time<=0){ game.time=0; gameOver('time'); return; }
+
+  /* ---- input dir ---- */
+  let mx=0,mz=0;
+  if(keys['w']||keys['arrowup']) mz-=1;
+  if(keys['s']||keys['arrowdown']) mz+=1;
+  if(keys['a']||keys['arrowleft']) mx-=1;
+  if(keys['d']||keys['arrowright']) mx+=1;
+  if(isTouch){ mx+=touchVec.x; mz+=touchVec.y; }
+  const im=Math.hypot(mx,mz); if(im>1){mx/=im;mz/=im;}
+
+  /* ---- warp ---- */
+  const wantWarp=(keys['shift']||touchWarp) && (mx||mz);
+  let warping=false;
+  if(wantWarp && game.boost>2){ warping=true; game.boost=clamp(game.boost-diff.warpDrain*60*dt,0,100); }
+  else { game.boost=clamp(game.boost+18*dt,0,100); }
+  const accel = warping?125:60;
+  const maxSpd = warping?46:24;
+  if(warping && Math.random()<.5) spawnParticles(ufo.position.clone().setY(HOVER_Y-1),2,0xb14dff,6,.4);
+
+  /* ---- movement (smooth velocity) ---- */
+  game.vel.x = lerp(game.vel.x, mx*maxSpd, clamp(accel/maxSpd*dt,0,1));
+  game.vel.z = lerp(game.vel.z, mz*maxSpd, clamp(accel/maxSpd*dt,0,1));
+  ufo.position.x = clamp(ufo.position.x+game.vel.x*dt, -WORLD+5, WORLD-5);
+  ufo.position.z = clamp(ufo.position.z+game.vel.z*dt, -WORLD+5, WORLD-5);
+  ufo.position.y = HOVER_Y + Math.sin(performance.now()/600)*.5;
+  // bank/tilt toward motion
+  ufo.rotation.z = lerp(ufo.rotation.z, -game.vel.x*.012, .1);
+  ufo.rotation.x = lerp(ufo.rotation.x,  game.vel.z*.012, .1);
+
+  /* ---- beam ---- */
+  const od = game.overdrive>0;
+  const curBeamR = od? beamRadius*1.4 : beamRadius;
+  const beamCost = od? 14 : 26;
+  const wantBeam=(keys[' ']||touchBeam);
+  const beamOn = wantBeam && game.energy>1;
+  if(beamOn){
+    game.energy=clamp(game.energy-beamCost*dt,0,100);
+    beam.visible=true;
+    const h=ufo.position.y;
+    const wscale=curBeamR/beamRadius;
+    beam.scale.set(wscale, h, wscale); beam.position.set(ufo.position.x, h/2, ufo.position.z);
+    beamMat.opacity=.30+Math.sin(performance.now()/80)*.06;
+    beamPad.position.set(ufo.position.x,.06,ufo.position.z); beamPad.scale.setScalar(curBeamR/beamRadius); beamRingMat.opacity=.5;
+    ufoLight.intensity=lerp(ufoLight.intensity,2.4,.2); ufoLight.distance=70;
+    Sound.beamStart();
+    if(Math.random()<.6) spawnParticles(new THREE.Vector3(ufo.position.x+rand(-curBeamR*.6,curBeamR*.6),rand(0,8),ufo.position.z+rand(-curBeamR*.6,curBeamR*.6)),1,0x9ad0ff,2,.7);
+  } else {
+    beam.visible=false; beamRingMat.opacity=0; ufoLight.intensity=lerp(ufoLight.intensity,0,.2);
+    game.energy=clamp(game.energy+16*dt,0,100);
+    Sound.beamStop();
+  }
+
+  /* ---- combo decay ---- */
+  if(game.comboTimer>0){ game.comboTimer-=dt; if(game.comboTimer<=0){ game.combo=1; $('#combo').classList.remove('show'); } }
+
+  /* ---- status timers ---- */
+  if(game.shield>0) game.shield-=dt;
+  if(game.overdrive>0) game.overdrive-=dt;
+  if(game.magnet>0) game.magnet-=dt;
+
+  /* ---- cows ---- */
+  for(let i=cows.length-1;i>=0;i--){
+    const c=cows[i]; const T=c.T;
+    if(c.state==='lifting'){
+      c.lift+=dt*(1.6/T.abduct)* (od?1.5:1);
+      c.m.position.y = lerp(0, ufo.position.y, c.lift);
+      c.m.position.x = lerp(c.m.position.x, ufo.position.x, dt*4);
+      c.m.position.z = lerp(c.m.position.z, ufo.position.z, dt*4);
+      c.m.rotation.y += dt*8; c.m.rotation.x += dt*3;
+      c.m.scale.setScalar(T.scale*(1-c.lift*.7));
+      if(Math.random()<.5) spawnParticles(c.m.position,1,T.glow?0xffd86b:0x9ad0ff,3,.5);
+      if(c.lift>=1){
+        const pts=Math.round(T.pts*game.combo);
+        game.score+=pts; game.cowsGrabbed++;
+        popup(ufo.position.clone().setY(HOVER_Y-2),'+'+pts, T.glow?'#ffd86b':'#9ad0ff');
+        spawnParticles(ufo.position.clone().setY(HOVER_Y-2),16,T.glow?0xffd86b:0x9ad0ff,12,.7);
+        Sound.abduct(game.combo);
+        // combo
+        game.combo=Math.min(8,game.combo+1); game.comboTimer=3.2;
+        if(game.combo>1){ const cb=$('#combo'); cb.querySelector('.val').textContent='x'+game.combo; cb.classList.add('show'); }
+        scene.remove(c.m); cows.splice(i,1);
+        if(T.glow) toast('GOLDEN COW! +'+pts,'#ffd86b',1000);
+        // respawn to keep field lively
+        setTimeout(()=>{ if(game.state==='play') spawnCow(); }, 800);
+        continue;
+      }
+      continue;
+    }
+    // wandering / panic
+    c.phase+=dt*8;
+    const distXZ=Math.hypot(c.m.position.x-ufo.position.x, c.m.position.z-ufo.position.z);
+    const inBeam = beamOn && distXZ < curBeamR*.92;
+    if(inBeam){ c.state='lifting'; c.lift=0; continue; }
+    // magnet pulls cows toward beam area
+    if(game.magnet>0 && beamOn && distXZ<curBeamR*3){
+      const a=Math.atan2(ufo.position.z-c.m.position.z, ufo.position.x-c.m.position.x);
+      c.m.position.x+=Math.cos(a)*6*dt; c.m.position.z+=Math.sin(a)*6*dt; c.m.rotation.y=-a+Math.PI/2;
+    }
+    // flee if UFO close & low (panic)
+    let spd=T.speed;
+    if(distXZ<18){ c.panic=1; const a=Math.atan2(c.m.position.z-ufo.position.z, c.m.position.x-ufo.position.x); c.dir=a; spd=T.speed*1.9; }
+    else { c.panic=Math.max(0,c.panic-dt); c.turn-=dt; if(c.turn<=0){ c.dir+=rand(-1.2,1.2); c.turn=rand(1.5,3.5);} }
+    const nx=c.m.position.x+Math.cos(c.dir)*spd*dt;
+    const nz=c.m.position.z+Math.sin(c.dir)*spd*dt;
+    // avoid obstacles + bounds
+    let ok=true;
+    if(Math.abs(nx)>WORLD-8||Math.abs(nz)>WORLD-8) ok=false;
+    for(const o of obstacles){ if(Math.hypot(nx-o.x,nz-o.z)<o.r+2){ok=false;break;} }
+    if(ok){ c.m.position.x=nx; c.m.position.z=nz; c.m.rotation.y=-c.dir+Math.PI/2; }
+    else { c.dir+=2.4; }
+    // leg waddle
+    if(c.m.userData.legs){ const sw=Math.sin(c.phase)*.3*(c.panic>0?1.6:1); c.m.userData.legs[0].rotation.x=sw; c.m.userData.legs[3].rotation.x=sw; c.m.userData.legs[1].rotation.x=-sw; c.m.userData.legs[2].rotation.x=-sw; }
+    c.m.position.y = Math.abs(Math.sin(c.phase))*.12;
+    c.m.scale.setScalar(T.scale);
+  }
+
+  /* ---- farmers ---- */
+  const elapsed = diff.time - game.time;
+  for(const f of farmers){
+    const m=f.m;
+    const a=Math.atan2(ufo.position.z-m.position.z, ufo.position.x-m.position.x);
+    const dist=Math.hypot(ufo.position.x-m.position.x, ufo.position.z-m.position.z);
+    if(dist>20){ const nx=m.position.x+Math.cos(a)*f.speed*dt, nz=m.position.z+Math.sin(a)*f.speed*dt;
+      let ok=Math.abs(nx)<WORLD-6&&Math.abs(nz)<WORLD-6;
+      for(const o of obstacles){ if(Math.hypot(nx-o.x,nz-o.z)<o.r+2){ok=false;break;} }
+      if(ok){m.position.x=nx;m.position.z=nz;} }
+    m.rotation.y = -a + Math.PI/2;
+    // aim gun up at ufo (3s grace period at start so player can get oriented)
+    f.cd-=dt;
+    if(f.cd<=0 && dist<90 && elapsed>3){
+      f.cd=diff.fireRate*rand(.85,1.25);
+      const muzzle=new THREE.Vector3(m.position.x,3.4,m.position.z);
+      const aim=ufo.position.clone();
+      aim.x+=game.vel.x*.2; aim.z+=game.vel.z*.2;            // partial lead
+      const spread=clamp(.05+dist*.0016,.05,.22);            // inaccuracy grows with range → dodgeable
+      fireBullet(muzzle,aim,spread);
+    }
+  }
+
+  /* ---- bullets ---- */
+  for(const b of bullets){ if(!b.active) continue;
+    b.m.position.x+=b.vx*dt; b.m.position.y+=b.vy*dt; b.m.position.z+=b.vz*dt; b.life-=dt;
+    if(b.life<=0||b.m.position.y<0||Math.abs(b.m.position.x)>WORLD||Math.abs(b.m.position.z)>WORLD){ b.active=false;b.m.visible=false; continue; }
+    if(b.m.position.distanceTo(ufo.position)<2.8){
+      b.active=false;b.m.visible=false;
+      spawnParticles(b.m.position,12,0xff6a3d,12,.5);
+      if(game.shield>0){ toast('SHIELD!','#9b6bff',600); }
+      else { game.health-=diff.dmg; game.shake=.5; Sound.hit();
+        if(game.health<=0){ game.health=0; spawnParticles(ufo.position,40,0xff5a2a,22,1); gameOver('shot'); return; } }
+    }
+  }
+
+  /* ---- powerups ---- */
+  game.powerTimer-=dt;
+  if(game.powerTimer<=0 && powerups.length<3){ spawnPowerup(); game.powerTimer=rand(7,12); }
+  for(let i=powerups.length-1;i>=0;i--){ const p=powerups[i]; p.t+=dt; p.life-=dt;
+    p.m.position.y=5+Math.sin(p.t*2)*.6; p.m.rotation.y+=dt*1.5; p.m.children[1].rotation.z+=dt*2;
+    if(p.life<3){ p.m.visible=Math.floor(p.t*8)%2===0; } // blink before expiring
+    if(p.life<=0){ scene.remove(p.m); powerups.splice(i,1); continue; }
+    if(Math.hypot(p.m.position.x-ufo.position.x,p.m.position.z-ufo.position.z)<5){
+      applyPower(p.key); spawnParticles(p.m.position,18,p.P.color,12,.7); Sound.power();
+      popup(p.m.position,p.P.label,'#'+p.P.color.toString(16).padStart(6,'0'));
+      scene.remove(p.m); powerups.splice(i,1);
+    }
+  }
+
+  /* ---- escalation: more farmers as you score ---- */
+  const wantFarmers = diff.farmers + Math.floor(game.cowsGrabbed/12);
+  if(farmers.length<wantFarmers && farmers.length<6){ spawnFarmer(); toast('REINFORCEMENTS!','#ff4d4d',900); }
+
+  updateParticles(dt);
+  updateCamera(dt);
+}
+
+function applyPower(key){
+  switch(key){
+    case 'repair': game.health=clamp(game.health+35,0,100); toast('HULL REPAIRED','#46e36b',900); break;
+    case 'time': game.time+=8; toast('+8 SECONDS','#66c6ff',900); break;
+    case 'overdrive': game.overdrive=9; toast('BEAM OVERDRIVE','#ff7a18',900); break;
+    case 'shield': game.shield=7; toast('SHIELD UP','#9b6bff',900); break;
+    case 'magnet': game.magnet=8; toast('COW MAGNET','#ff5fb0',900); break;
+  }
+}
+
+/* ---- camera (chase, with shake) ---- */
+const camTarget=new THREE.Vector3();
+function updateCamera(dt){
+  if(game.shake>0) game.shake=Math.max(0,game.shake-dt);
+  const desired=tmp.set(ufo.position.x - game.vel.x*.15, ufo.position.y+26, ufo.position.z+30);
+  camera.position.lerp(desired, clamp(dt*3.5,0,1));
+  camTarget.lerp(tmp2.set(ufo.position.x,4,ufo.position.z-6), clamp(dt*4,0,1));
+  if(game.shake>0){ const s=game.shake*1.6; camera.position.x+=rand(-s,s); camera.position.y+=rand(-s,s); }
+  camera.lookAt(camTarget);
+}
+
+/* ============================================================ *
+ *  HUD + MINIMAP
+ * ============================================================ */
+const miniCtx=$('#miniCanvas').getContext('2d'); const MS=172;
+function drawHUD(){
+  $('#score').querySelector('.val').textContent=game.score;
+  const tEl=$('#timer'); tEl.querySelector('.val').textContent=Math.ceil(game.time);
+  tEl.classList.toggle('low', game.time<=10);
+  $('#healthFill').style.width=game.health+'%'; $('#healthTxt').textContent=Math.round(game.health)+'%';
+  $('#energyFill').style.width=game.energy+'%'; $('#energyTxt').textContent=Math.round(game.energy)+'%';
+  $('#boostFill').style.width=game.boost+'%'; $('#boostTxt').textContent=Math.round(game.boost)+'%';
+  // status effects
+  const fx=[]; if(game.shield>0)fx.push(['🛡️','SHIELD',game.shield]); if(game.overdrive>0)fx.push(['🔥','OVERDRIVE',game.overdrive]);
+  if(game.magnet>0)fx.push(['🧲','MAGNET',game.magnet]);
+  $('#effects').innerHTML=fx.map(f=>`<div class="fx">${f[0]} ${f[1]} <b>${Math.ceil(f[2])}</b></div>`).join('');
+}
+function drawMinimap(){
+  miniCtx.clearRect(0,0,MS,MS);
+  miniCtx.fillStyle='rgba(20,40,24,.6)'; miniCtx.fillRect(0,0,MS,MS);
+  const sc=MS/(WORLD*2); const cv=(v)=>v*sc+MS/2;
+  // obstacles
+  miniCtx.fillStyle='rgba(150,110,70,.7)';
+  obstacles.forEach(o=>{ miniCtx.beginPath(); miniCtx.arc(cv(o.x),cv(o.z),Math.max(1.5,o.r*sc*.5),0,7); miniCtx.fill(); });
+  // cows
+  cows.forEach(c=>{ miniCtx.fillStyle=c.T.glow?'#ffd86b':(c.type==='bull'?'#888':'#ffffff');
+    miniCtx.fillRect(cv(c.m.position.x)-1.5,cv(c.m.position.z)-1.5,3,3); });
+  // powerups
+  powerups.forEach(p=>{ miniCtx.fillStyle='#46e36b'; miniCtx.beginPath(); miniCtx.arc(cv(p.m.position.x),cv(p.m.position.z),2.5,0,7); miniCtx.fill(); });
+  // farmers
+  farmers.forEach(f=>{ miniCtx.fillStyle='#ff4d4d'; miniCtx.beginPath(); miniCtx.arc(cv(f.m.position.x),cv(f.m.position.z),3,0,7); miniCtx.fill();
+    miniCtx.strokeStyle='rgba(255,77,77,.4)'; miniCtx.beginPath(); miniCtx.arc(cv(f.m.position.x),cv(f.m.position.z),95*sc,0,7); miniCtx.stroke(); });
+  // ufo
+  miniCtx.fillStyle='#9ad0ff'; miniCtx.beginPath(); miniCtx.arc(cv(ufo.position.x),cv(ufo.position.z),3.5,0,7); miniCtx.fill();
+  miniCtx.strokeStyle='rgba(154,208,255,.5)'; miniCtx.beginPath(); miniCtx.arc(cv(ufo.position.x),cv(ufo.position.z),beamRadius*sc,0,7); miniCtx.stroke();
+}
+
+/* ============================================================ *
+ *  LOOP
+ * ============================================================ */
+let last=performance.now();
+function loop(now){
+  requestAnimationFrame(loop);
+  let dt=(now-last)/1000; last=now; dt=Math.min(dt,.05);
+  update(dt);
+  if(game.state==='play'){ drawHUD(); drawMinimap(); }
+  // gentle window flicker
+  renderer.render(scene,camera);
+}
+requestAnimationFrame(loop);
+
+/* ============================================================ *
+ *  UI WIRING
+ * ============================================================ */
+$('#diffPick').addEventListener('click',e=>{ const b=e.target.closest('button'); if(!b)return;
+  diffKey=b.dataset.d; [...$('#diffPick').children].forEach(c=>c.classList.toggle('sel',c===b)); Sound.init(); Sound.click(); });
+$('#playBtn').addEventListener('click',()=>{Sound.click();startGame();});
+$('#againBtn').addEventListener('click',()=>{Sound.click();startGame();});
+$('#resumeBtn').addEventListener('click',()=>{Sound.click();resume();});
+$('#quitBtn').addEventListener('click',()=>{Sound.click();toMenu();});
+$('#menuBtn').addEventListener('click',()=>{Sound.click();toMenu();});
+$('#muteBtn').addEventListener('click',()=>{ Sound.init(); const m=!Sound.isMuted(); Sound.setMuted(m); $('#muteBtn').textContent=m?'🔇':'🔊'; });
+
+addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+
+// expose for debugging
+window.__cow={game,cows,farmers,ufo,startGame};
+</script>
+</body>
+<!-- ZOU-449 back-link overlay — non-invasive, zero game-logic changes -->
+<style>
+  .arcade-back-link { position:fixed; top:12px; left:12px; z-index:9999;
+    background: rgba(0,0,0,0.65); backdrop-filter: blur(8px);
+    color: #fff; padding: 6px 14px; border-radius: 24px;
+    font-family: system-ui, sans-serif; font-size: 13px; font-weight: 500;
+    text-decoration: none; border: 1px solid rgba(255,255,255,0.15);
+    transition: background 0.2s; pointer-events: auto; }
+  .arcade-back-link:hover { background: rgba(0,0,0,0.85); }
+</style>
+<a class="arcade-back-link" href="/" title="Back to Arcade">← Arcade</a>
+<script>
+  addEventListener('keydown',function(e){ if(e.key==='Escape'){
+    e.preventDefault(); location.href='/'; }});
+</script>
+</html>

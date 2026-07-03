@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZOUROBOROS ARCADE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+<style>
+@property --glow-radius {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 8px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black:   oklch(5% 0.008 240);
+  --cyan:    oklch(88% 0.18 195);
+  --magenta: oklch(78% 0.26 320);
+  --amber:   oklch(82% 0.20 68);
+  --green:   oklch(80% 0.22 145);
+  --white:   oklch(96% 0.005 240);
+  --dim:     oklch(40% 0.01 240);
+  --pixel:   'Press Start 2P', monospace;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--pixel);
+  background: var(--black);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── CRT grid background ──────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(oklch(50% 0.15 195 / 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(50% 0.15 195 / 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Scanlines ────────────────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    oklch(0% 0 0 / 0.18) 3px,
+    oklch(0% 0 0 / 0.18) 4px
+  );
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ── Moving CRT beam ──────────────────────── */
+.crt-beam {
+  position: fixed;
+  top: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--cyan) 40%,
+    oklch(100% 0 0 / 0.9) 50%,
+    var(--cyan) 60%,
+    transparent 100%
+  );
+  opacity: 0.15;
+  animation: crt-scan 6s linear infinite;
+  pointer-events: none;
+  z-index: 999;
+}
+
+@keyframes crt-scan {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(100vh); }
+}
+
+/* ── Header / marquee top ─────────────────── */
+.marquee-bar {
+  position: relative;
+  z-index: 10;
+  background: var(--cyan);
+  color: var(--black);
+  font-size: 0.45rem;
+  padding: 5px 0;
+  overflow: hidden;
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+}
+
+.marquee-inner {
+  display: inline-block;
+  animation: marquee 22s linear infinite;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+/* ── Main header ──────────────────────────── */
+header {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 48px 16px 32px;
+  border-bottom: 2px solid oklch(88% 0.18 195 / 0.3);
+}
+
+.arcade-title {
+  font-size: clamp(1.4rem, 4vw, 2.2rem);
+  color: var(--cyan);
+  text-shadow:
+    0 0 4px var(--cyan),
+    0 0 14px oklch(88% 0.18 195 / 0.8),
+    0 0 40px oklch(75% 0.22 195 / 0.5),
+    0 0 80px oklch(70% 0.22 195 / 0.25);
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  animation: flicker 8s ease-in-out infinite;
+}
+
+@keyframes flicker {
+  0%, 95%, 100% { opacity: 1; }
+  96%            { opacity: 0.85; }
+  97%            { opacity: 1; }
+  98%            { opacity: 0.7; }
+  99%            { opacity: 1; }
+}
+
+.subtitle {
+  margin-top: 18px;
+  font-size: 0.5rem;
+  color: var(--dim);
+  letter-spacing: 0.12em;
+}
+
+.insert-coin {
+  margin-top: 20px;
+  font-size: 0.6rem;
+  color: var(--amber);
+  text-shadow: 0 0 6px var(--amber), 0 0 20px oklch(82% 0.20 68 / 0.5);
+  letter-spacing: 0.08em;
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+.credit-row {
+  margin-top: 12px;
+  font-size: 0.45rem;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+}
+
+/* ── Cabinet selector ─────────────────────── */
+main {
+  position: relative;
+  z-index: 10;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 40px 20px 60px;
+}
+
+.section-label {
+  font-size: 0.45rem;
+  color: var(--green);
+  text-shadow: 0 0 6px var(--green);
+  letter-spacing: 0.15em;
+  margin-bottom: 24px;
+  padding-left: 4px;
+}
+
+/* ── Thumbnail ────────────────────────────── */
+.cabinet-thumb {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  display: block;
+  margin-bottom: 24px;
+  border: 1px solid oklch(88% 0.18 195 / 0.2);
+  image-rendering: pixelated;
+}
+
+/* ── Featured cabinet (hero slot) ────────── */
+.featured-cabinet {
+  position: relative;
+  margin-bottom: 48px;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  border: 2px solid oklch(88% 0.18 195 / 0.5);
+  background: oklch(8% 0.02 195);
+  padding: 32px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  --glow-radius: 8px;
+}
+
+.featured-cabinet::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border: 1px solid oklch(88% 0.18 195 / 0.15);
+  pointer-events: none;
+}
+
+.featured-cabinet:hover {
+  border-color: var(--cyan);
+  box-shadow:
+    0 0 20px oklch(88% 0.18 195 / 0.35),
+    inset 0 0 20px oklch(88% 0.18 195 / 0.07);
+}
+
+.featured-cabinet:hover .play-label {
+  color: var(--black);
+  background: var(--cyan);
+  box-shadow: 0 0 16px var(--cyan);
+}
+
+.cabinet-eyebrow {
+  font-size: 0.45rem;
+  color: var(--magenta);
+  text-shadow: 0 0 6px var(--magenta);
+  letter-spacing: 0.15em;
+  margin-bottom: 16px;
+}
+
+.cabinet-name {
+  font-size: clamp(1rem, 3vw, 1.6rem);
+  color: var(--white);
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+  text-shadow:
+    0 0 4px oklch(96% 0.005 240 / 0.5),
+    0 0 20px oklch(88% 0.18 195 / 0.2);
+}
+
+.cabinet-tagline {
+  font-size: 0.45rem;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+  margin-bottom: 24px;
+  line-height: 1.8;
+}
+
+.cabinet-desc {
+  font-size: 0.4rem;
+  color: oklch(65% 0.01 240);
+  line-height: 2;
+  max-width: 60ch;
+  margin-bottom: 28px;
+}
+
+.controls-block {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+
+.ctrl-pill {
+  font-size: 0.38rem;
+  padding: 5px 10px;
+  color: var(--green);
+  border: 1px solid oklch(80% 0.22 145 / 0.4);
+  letter-spacing: 0.08em;
+}
+
+.cabinet-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.play-label {
+  font-size: 0.55rem;
+  padding: 10px 24px;
+  color: var(--cyan);
+  border: 2px solid var(--cyan);
+  letter-spacing: 0.12em;
+  transition: all 0.12s;
+  display: inline-block;
+}
+
+.tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  font-size: 0.35rem;
+  padding: 4px 8px;
+  color: var(--dim);
+  border: 1px solid oklch(40% 0.01 240 / 0.5);
+  letter-spacing: 0.08em;
+}
+
+/* ── Coming-soon row ──────────────────────── */
+.coming-soon-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.coming-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border: 1px solid oklch(40% 0.01 240 / 0.3);
+  opacity: 0.5;
+}
+
+.coming-icon { font-size: 1.2rem; }
+
+.coming-title {
+  font-size: 0.45rem;
+  color: var(--dim);
+  letter-spacing: 0.08em;
+}
+
+.coming-badge {
+  font-size: 0.35rem;
+  padding: 3px 8px;
+  border: 1px solid oklch(40% 0.01 240 / 0.4);
+  color: oklch(35% 0.01 240);
+  letter-spacing: 0.1em;
+  margin-left: auto;
+}
+
+/* ── Empty state ──────────────────────────── */
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  color: var(--dim);
+  font-size: 0.5rem;
+  line-height: 2;
+}
+
+/* ── Footer ───────────────────────────────── */
+footer {
+  position: relative;
+  z-index: 10;
+  text-align: center;
+  padding: 24px;
+  border-top: 1px solid oklch(88% 0.18 195 / 0.15);
+  font-size: 0.35rem;
+  color: var(--dim);
+  letter-spacing: 0.1em;
+}
+
+/* ── Reduced motion ───────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .crt-beam, .marquee-inner { animation: none; }
+  .arcade-title { animation: none; }
+  .insert-coin { animation: none; opacity: 1; }
+}
+</style>
+</head>
+<body>
+
+<div class="crt-beam" aria-hidden="true"></div>
+
+<!-- Marquee ticker -->
+<div class="marquee-bar" aria-hidden="true">
+  <span class="marquee-inner">
+    &nbsp;&nbsp;HIGH SCORE &bull; 999999 &bull; AAA &nbsp;&nbsp;
+    PLAYER 1 &bull; PRESS START &nbsp;&nbsp;
+    HIGH SCORE &bull; 999999 &bull; AAA &nbsp;&nbsp;
+    ZOUROBOROS ARCADE &bull; EST. MMXXVI &nbsp;&nbsp;
+    QUARTERS ACCEPTED &bull; SKILL REQUIRED &nbsp;&nbsp;
+    HIGH SCORE &bull; 999999 &bull; AAA &nbsp;&nbsp;
+    PLAYER 1 &bull; PRESS START &nbsp;&nbsp;
+    HIGH SCORE &bull; 999999 &bull; AAA &nbsp;&nbsp;
+    ZOUROBOROS ARCADE &bull; EST. MMXXVI &nbsp;&nbsp;
+    QUARTERS ACCEPTED &bull; SKILL REQUIRED &nbsp;&nbsp;
+  </span>
+</div>
+
+<header>
+  <div class="arcade-title">ZOUROBOROS<br>ARCADE</div>
+  <div class="subtitle">— SELECT YOUR GAME —</div>
+  <div class="insert-coin">▸ INSERT COIN ◂</div>
+  <div class="credit-row">CREDIT&nbsp;&nbsp;00</div>
+</header>
+
+<main id="main">
+  <div class="empty-state" id="empty" hidden>
+    NO GAMES LOADED<br><br>
+    ADD A TITLE TO REGISTRY.JSON
+  </div>
+  <div id="featured-slot"></div>
+  <div id="queue-slot"></div>
+</main>
+
+<footer>
+  &copy; MMXXVI ZOUROBOROS INDUSTRIES &bull; ALL RIGHTS RESERVED &bull;
+  ADD GAMES VIA REGISTRY.JSON
+</footer>
+
+<!-- Inline fallback registry -->
+<script id="fallback" type="application/json">
+{
+  "version": 1,
+  "games": [
+    {
+      "id": "cow-abductor",
+      "title": "COW ABDUCTORS",
+      "subtitle": "3D UFO FARM HEIST",
+      "description": "Pilot a UFO over a night farm, abduct cows with your tractor beam, dodge the angry farmer, and beat the clock.",
+      "path": "./cow-abductor/index.html",
+      "thumbnail": "./thumbnails/cow-abductor.png",
+      "icon": "🛸",
+      "accent": "#00ffff",
+      "tags": ["3D", "ACTION", "ARCADE", "1P"],
+      "controls": ["WASD / ARROWS — FLY", "SPACE — TRACTOR BEAM", "SHIFT — BOOST"],
+      "status": "live",
+      "featured": true,
+      "added": "2026-07-02"
+    }
+  ]
+}
+</script>
+
+<script>
+(async function () {
+  const featuredSlot = document.getElementById('featured-slot');
+  const queueSlot    = document.getElementById('queue-slot');
+  const emptyEl      = document.getElementById('empty');
+
+  let registry;
+  try {
+    const res = await fetch('./registry.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    registry = await res.json();
+  } catch {
+    registry = JSON.parse(document.getElementById('fallback').textContent || '{"games":[]}');
+  }
+
+  const games = Array.isArray(registry.games) ? registry.games : [];
+
+  if (!games.length) {
+    emptyEl.hidden = false;
+    return;
+  }
+
+  games.sort((a, b) => {
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    return (b.added || '').localeCompare(a.added || '');
+  });
+
+  const featured = games.filter(g => g.featured && g.status === 'live');
+  const others   = games.filter(g => !g.featured || g.status !== 'live');
+
+  // ── Featured hero cabinet ────────────────
+  if (featured.length) {
+    const g = featured[0];
+    const el = document.createElement('a');
+    el.href = g.path;
+    el.className = 'featured-cabinet';
+    el.setAttribute('aria-label', 'Play ' + g.title);
+
+    const ctrlsHtml = (g.controls || [])
+      .map(c => `<span class="ctrl-pill">${c}</span>`).join('');
+    const tagsHtml = (g.tags || [])
+      .map(t => `<span class="tag">${t}</span>`).join('');
+
+    el.innerHTML = `
+      ${g.thumbnail ? `<img class="cabinet-thumb" src="${g.thumbnail}" alt="${g.title} thumbnail" loading="eager">` : ''}
+      <div class="cabinet-eyebrow">◆ FEATURED CABINET ◆</div>
+      <div class="cabinet-name">${g.icon || '🎮'}&nbsp;&nbsp;${g.title}</div>
+      <div class="cabinet-tagline">${g.subtitle || ''}</div>
+      <div class="cabinet-desc">${g.description || ''}</div>
+      <div class="controls-block">${ctrlsHtml}</div>
+      <div class="cabinet-footer">
+        <span class="play-label">▶ PLAY NOW</span>
+        <div class="tags-row">${tagsHtml}</div>
+      </div>
+    `;
+    featuredSlot.appendChild(el);
+
+    // Additional featured games (2+) as smaller cabinets
+    if (featured.length > 1) {
+      for (const g2 of featured.slice(1)) {
+        featuredSlot.appendChild(buildSmallCabinet(g2));
+      }
+    }
+  }
+
+  // ── Coming soon queue ────────────────────
+  if (others.length) {
+    const label = document.createElement('div');
+    label.className = 'section-label';
+    label.textContent = '// COMING SOON';
+    queueSlot.appendChild(label);
+
+    const list = document.createElement('div');
+    list.className = 'coming-soon-row';
+    for (const g of others) {
+      const item = document.createElement('div');
+      item.className = 'coming-item';
+      item.innerHTML = `
+        <span class="coming-icon">${g.icon || '🎮'}</span>
+        <span class="coming-title">${g.title}</span>
+        <span class="coming-badge">LOADING...</span>
+      `;
+      list.appendChild(item);
+    }
+    queueSlot.appendChild(list);
+  }
+
+  if (!featured.length && !others.length) {
+    emptyEl.hidden = false;
+  }
+
+  function buildSmallCabinet(g) {
+    const el = document.createElement('a');
+    el.href = g.path;
+    el.className = 'featured-cabinet';
+    el.style.marginBottom = '16px';
+    el.innerHTML = `
+      <div class="cabinet-name" style="font-size:0.9rem">${g.icon || '🎮'}&nbsp;&nbsp;${g.title}</div>
+      <div class="cabinet-tagline">${g.subtitle || ''}</div>
+      <div class="cabinet-footer">
+        <span class="play-label">▶ PLAY</span>
+        <div class="tags-row">${(g.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+    `;
+    return el;
+  }
+})();
+</script>
+</body>
+</html>

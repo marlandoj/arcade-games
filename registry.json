@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "updated": "2026-07-02",
+  "games": [
+    {
+      "id": "cow-abductor",
+      "title": "Cow Abductors",
+      "subtitle": "3D UFO Farm Heist",
+      "description": "Pilot a UFO over a night farm, abduct cows with your tractor beam, dodge the angry farmer, and beat the clock. Combos, powerups, and three difficulty tiers.",
+      "path": "./cow-abductor/index.html",
+      "thumbnail": "./thumbnails/cow-abductor.png",
+      "icon": "🛸",
+      "accent": "#ff7a18",
+      "tags": ["3D", "action", "arcade", "single-player"],
+      "controls": ["WASD / Arrows — fly", "Space — tractor beam", "Shift — boost", "Esc — back to arcade"],
+      "status": "live",
+      "featured": true,
+      "added": "2026-07-02"
+    }
+  ]
+}
