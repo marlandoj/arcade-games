@@ -1,44 +1,42 @@
-# Arcade
+# Zouroboros Arcade
 
-A self-contained arcade-games hub that hosts browser games. The catalog is **registry-driven** — add a game by dropping a directory and adding one entry to `registry.json`. No build step, no server-side runtime.
+A registry-driven HTML5 arcade hub. Add a game by dropping a directory and one entry in `registry.json` — no build step, no server-side runtime.
+
+**Live:** https://zouroboros-arcade-marlandoj.zocomputer.io
+
+## Games
+
+| ID | Title | Features |
+|----|-------|----------|
+| `cow-abductor` | **Cow Abductors** — 3D UFO Farm Heist | 3D Three.js, tractor beam, combos, minimap, power-ups, mobile joystick |
+| `void-blaster` | **Void Blaster** — Space Invaders | Waves, bunkers, mystery ship, combo×4, power-ups, mobile controls |
+| `asteroid-drift` | **Asteroid Drift** — Vector Space | Splitting rocks, UFOs, hyperspace, shield bar, particles, mobile joystick |
+| `neon-snake` | **Neon Snake** — Glow Trails | 5 food types, ghost mode, portal walls, speed ramp×5, swipe controls |
 
 ## Layout
 
 ```
-games/
-├── index.html              # The hub page (renders cards from registry.json)
-├── registry.json           # Single source of truth for the game catalog
-├── README.md               # This file
-├── scripts/
-│   └── validate-registry.ts  # Asserts every registry entry has a playable dir + index.html
-└── <game-id>/
-    └── index.html          # A single-file, self-contained game
+arcade-games/
+├── index.html              # Hub — renders game cards from registry.json
+├── registry.json           # Catalog source of truth
+├── thumbnails/             # Game thumbnail images (PNG)
+├── <game-id>/
+│   └── index.html          # Self-contained single-file game
+└── scripts/
+    └── validate-registry.ts
 ```
-
-## Play
-
-Open `games/index.html` in a browser, or serve the folder:
-
-```bash
-cd games && python3 -m http.server 8080
-# visit http://localhost:8080/
-```
-
-> Opening `index.html` via `file://` also works — the hub falls back to an embedded
-> default catalog if the `registry.json` fetch is blocked.
 
 ## Add a game
 
-1. Create `games/<your-game-id>/index.html` — a single self-contained file
-   (inline CSS/JS, CDN deps via importmap are fine; see `cow-abductor/` for the pattern).
-2. Add an entry to `games/registry.json`:
+1. Create `<game-id>/index.html` — single self-contained file (inline CSS/JS).
+2. Add an entry to `registry.json`:
    ```json
    {
      "id": "your-game-id",
      "title": "Your Game",
      "subtitle": "tagline",
      "description": "one or two sentences",
-     "path": "./your-game-id/",
+     "path": "./your-game-id/index.html",
      "icon": "🕹️",
      "accent": "#22d3ee",
      "tags": ["2d", "puzzle"],
@@ -48,23 +46,22 @@ cd games && python3 -m http.server 8080
      "added": "2026-07-03"
    }
    ```
-3. Validate:
-   ```bash
-   bun games/scripts/validate-registry.ts
-   ```
-   Exit `0` = every registry entry resolves to a directory containing `index.html`.
+3. Validate: `bun scripts/validate-registry.ts` (exit 0 = every entry resolves to an `index.html`).
 
-That's it — the hub picks up the new card automatically. No edits to `index.html` required.
+The hub picks up the new card automatically — no edits to `index.html` required.
 
-## Games
+## Feature standard
 
-| ID | Title | Status |
-|----|-------|--------|
-| `cow-abductor` | Cow Abductors — 3D UFO Farm Heist | live |
+All games follow the cow-abductor feature bar:
+- Full HUD (score, lives, level, high score via `localStorage`)
+- Difficulty selection (Easy / Normal / Hard)
+- Pause screen (`P`), Game Over screen with session stats
+- Power-ups, combo/multiplier system
+- Web Audio API synth sounds (no external files), mute toggle
+- CRT scanline aesthetic, Press Start 2P font
+- Mobile touch controls (joystick or D-pad)
+- `← BACK` link to hub
 
-## Notes
+## Ticket
 
-- `games/cow-abductor/index.html` is a byte-faithful port of
-  `Projects/cow-abductors/index.html` (Three.js + Web Audio, single file). The only
-  addition is a non-invasive "← Arcade" back-link overlay spliced before `</body>`.
-- Ticket: **ZOU-449** (Dark Factory intake). Branch: `factory/zou-449-create-a-page-for-arcade-games`.
+**ZOU-449** — Create a page for arcade games.
