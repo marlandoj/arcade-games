@@ -511,26 +511,16 @@ footer {
     }
   }
 
-  // ── Coming soon queue ────────────────────
+  // ── Other live games ────────────────────
   if (others.length) {
     const label = document.createElement('div');
     label.className = 'section-label';
-    label.textContent = '// COMING SOON';
+    label.textContent = '// MORE GAMES';
     queueSlot.appendChild(label);
 
-    const list = document.createElement('div');
-    list.className = 'coming-soon-row';
-    for (const g of others) {
-      const item = document.createElement('div');
-      item.className = 'coming-item';
-      item.innerHTML = `
-        <span class="coming-icon">${g.icon || '🎮'}</span>
-        <span class="coming-title">${g.title}</span>
-        <span class="coming-badge">LOADING...</span>
-      `;
-      list.appendChild(item);
+    for (const g of others.filter(g => g.status === 'live')) {
+      queueSlot.appendChild(buildSmallCabinet(g));
     }
-    queueSlot.appendChild(list);
   }
 
   if (!featured.length && !others.length) {
