@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated": "2026-07-02",
+  "updated": "2026-07-03",
   "games": [
     {
       "id": "cow-abductor",
@@ -16,6 +16,51 @@
       "status": "live",
       "featured": true,
       "added": "2026-07-02"
+    },
+    {
+      "id": "void-blaster",
+      "title": "VOID BLASTER",
+      "subtitle": "Alien Invasion — Hold the Line",
+      "description": "Four rows of alien invaders descend on your planet. Blast them before they reach you. Destroy the mystery ship for bonus points. Three lives. No mercy.",
+      "path": "./void-blaster/index.html",
+      "thumbnail": "./thumbnails/void-blaster.png",
+      "icon": "👾",
+      "accent": "#0ff",
+      "tags": ["shooter", "arcade", "classic", "single-player"],
+      "controls": ["← → — move", "Space — fire", "P — pause", "Esc — back to arcade"],
+      "status": "live",
+      "featured": false,
+      "added": "2026-07-03"
+    },
+    {
+      "id": "asteroid-drift",
+      "title": "ASTEROID DRIFT",
+      "subtitle": "Vector Space. Survive.",
+      "description": "Your ship drifts through a debris field. Rotate, thrust, and blast. Rocks split. Smaller fragments move faster. Use hyperspace when cornered — if you dare.",
+      "path": "./asteroid-drift/index.html",
+      "thumbnail": "./thumbnails/asteroid-drift.png",
+      "icon": "🌑",
+      "accent": "#0cf",
+      "tags": ["shooter", "vector", "arcade", "single-player"],
+      "controls": ["← → — rotate", "↑ — thrust", "Space — fire", "H — hyperspace", "P — pause", "Esc — back"],
+      "status": "live",
+      "featured": false,
+      "added": "2026-07-03"
+    },
+    {
+      "id": "neon-snake",
+      "title": "NEON SNAKE",
+      "subtitle": "Glow Trails. Speed Ramp.",
+      "description": "Classic snake with phosphor glow trails. Eat food, grow longer, move faster. Every five pickups the multiplier climbs. High score saves locally.",
+      "path": "./neon-snake/index.html",
+      "thumbnail": "./thumbnails/neon-snake.png",
+      "icon": "🐍",
+      "accent": "#0f0",
+      "tags": ["classic", "arcade", "single-player"],
+      "controls": ["WASD / Arrows — steer", "P — pause", "Esc — back to arcade"],
+      "status": "live",
+      "featured": false,
+      "added": "2026-07-03"
     }
   ]
 }

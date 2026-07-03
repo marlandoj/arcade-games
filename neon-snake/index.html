@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEON SNAKE — Arcade</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:#000; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; font-family:'Courier New',monospace; overflow:hidden; }
+  #back-link { position:fixed; top:14px; left:18px; color:#0ff; text-decoration:none; font-size:13px; letter-spacing:2px; opacity:0.7; z-index:100; text-shadow:0 0 8px #0ff; }
+  #back-link:hover { opacity:1; }
+  #hud { display:flex; justify-content:space-between; width:480px; padding:6px 0; font-size:14px; letter-spacing:2px; color:#0f0; text-shadow:0 0 8px #0f0; }
+  canvas { display:block; border:1px solid #0f0; box-shadow:0 0 24px #0f04,0 0 2px #0f0; }
+  #scanlines { position:fixed; top:0; left:0; width:100%; height:100%; background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.12) 2px,rgba(0,0,0,0.12) 4px); pointer-events:none; z-index:50; }
+  #overlay { position:absolute; top:0; left:0; right:0; bottom:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgba(0,0,0,0.88); color:#0f0; font-family:'Courier New',monospace; z-index:20; text-align:center; }
+  #overlay h1 { font-size:36px; letter-spacing:8px; text-shadow:0 0 24px #0f0,0 0 48px #0f04; margin-bottom:16px; }
+  #overlay p { font-size:12px; letter-spacing:2px; margin:5px 0; opacity:0.85; }
+  .blink { animation:blink 1s step-end infinite; }
+  @keyframes blink { 0%,100%{opacity:1}50%{opacity:0} }
+  #canvas-wrap { position:relative; }
+</style>
+</head>
+<body>
+<div id="scanlines"></div>
+<a id="back-link" href="../index.html">← BACK</a>
+<div id="hud">
+  <span>SCORE: <span id="score-display">000000</span></span>
+  <span>BEST: <span id="best-display">000000</span></span>
+  <span>×<span id="mult-display">1</span></span>
+</div>
+<div id="canvas-wrap">
+  <canvas id="c" width="480" height="480"></canvas>
+  <div id="overlay">
+    <h1>NEON SNAKE</h1>
+    <p>ARROWS / WASD — STEER</p>
+    <p>P — PAUSE &nbsp; ESC — BACK</p>
+    <p class="blink" style="margin-top:24px">INSERT COIN TO PLAY</p>
+  </div>
+</div>
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const overlay = document.getElementById('overlay');
+const scoreEl = document.getElementById('score-display');
+const bestEl = document.getElementById('best-display');
+const multEl = document.getElementById('mult-display');
+
+const W = 480, H = 480;
+const CELL = 16, COLS = W/CELL, ROWS = H/CELL;
+
+let state = 'title';
+let snake, dir, nextDir, food, score, multiplier, eaten;
+let stepInterval, lastStep, foodPulse;
+let highScore = parseInt(localStorage.getItem('neon-snake-hs')||'0');
+bestEl.textContent = String(highScore).padStart(6,'0');
+
+const TAIL_COLORS = ['#0f0','#0f0','#0c0','#0a0','#080','#060','#040','#030'];
+
+function initGame() {
+  snake = [{x:COLS/2,y:ROWS/2},{x:COLS/2-1,y:ROWS/2},{x:COLS/2-2,y:ROWS/2}];
+  dir={x:1,y:0}; nextDir={x:1,y:0};
+  score=0; multiplier=1; eaten=0;
+  stepInterval=180; lastStep=0; foodPulse=0;
+  spawnFood();
+  updateHUD();
+}
+
+function spawnFood() {
+  let pos;
+  do { pos={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)}; }
+  while (snake.some(s=>s.x===pos.x&&s.y===pos.y));
+  food=pos;
+}
+
+function updateHUD() {
+  scoreEl.textContent=String(score).padStart(6,'0');
+  multEl.textContent=multiplier;
+  if(score>highScore){ highScore=score; localStorage.setItem('neon-snake-hs',highScore); bestEl.textContent=String(highScore).padStart(6,'0'); }
+}
+
+function step() {
+  dir={...nextDir};
+  const head={x:(snake[0].x+dir.x+COLS)%COLS,y:(snake[0].y+dir.y+ROWS)%ROWS};
+
+  // Self collision
+  if(snake.some(s=>s.x===head.x&&s.y===head.y)) {
+    state='gameover';
+    showOverlay('GAME OVER',`SCORE: ${String(score).padStart(6,'0')}`,true);
+    return;
+  }
+
+  snake.unshift(head);
+
+  if(head.x===food.x&&head.y===food.y) {
+    score+=10*multiplier;
+    eaten++;
+    if(eaten%5===0){ multiplier++; stepInterval=Math.max(60,stepInterval-15); }
+    spawnFood();
+    updateHUD();
+  } else {
+    snake.pop();
+  }
+}
+
+function drawCell(x,y,color,glow,alpha=1) {
+  ctx.globalAlpha=alpha;
+  ctx.shadowBlur=glow; ctx.shadowColor=color;
+  ctx.fillStyle=color;
+  ctx.fillRect(x*CELL+1,y*CELL+1,CELL-2,CELL-2);
+  ctx.shadowBlur=0;
+  ctx.globalAlpha=1;
+}
+
+const BG_DOTS = Array.from({length:200},()=>({x:Math.random()*W,y:Math.random()*H,b:Math.random()*0.15+0.05}));
+
+function drawBg() {
+  ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H);
+  // grid lines
+  ctx.strokeStyle='rgba(0,255,0,0.04)'; ctx.lineWidth=0.5;
+  for(let x=0;x<=COLS;x++){ ctx.beginPath(); ctx.moveTo(x*CELL,0); ctx.lineTo(x*CELL,H); ctx.stroke(); }
+  for(let y=0;y<=ROWS;y++){ ctx.beginPath(); ctx.moveTo(0,y*CELL); ctx.lineTo(W,y*CELL); ctx.stroke(); }
+  for(const d of BG_DOTS){ ctx.fillStyle=`rgba(0,255,0,${d.b})`; ctx.fillRect(d.x,d.y,1,1); }
+}
+
+function drawFood(ts) {
+  const pulse = 0.5 + 0.5*Math.sin(ts/200);
+  const glow = 8+pulse*16;
+  // outer pulse ring
+  ctx.globalAlpha=pulse*0.4;
+  ctx.fillStyle='#ff0';
+  ctx.shadowBlur=20; ctx.shadowColor='#ff0';
+  ctx.fillRect(food.x*CELL-2,food.y*CELL-2,CELL+4,CELL+4);
+  ctx.shadowBlur=0; ctx.globalAlpha=1;
+  // core
+  drawCell(food.x,food.y,'#ff0',glow);
+  // inner dot
+  ctx.fillStyle='#fff'; ctx.shadowBlur=4; ctx.shadowColor='#fff';
+  ctx.fillRect(food.x*CELL+5,food.y*CELL+5,CELL-10,CELL-10);
+  ctx.shadowBlur=0;
+}
+
+function drawSnake() {
+  for(let i=0;i<snake.length;i++){
+    const s=snake[i];
+    const t = Math.min(i,TAIL_COLORS.length-1);
+    const color=TAIL_COLORS[t];
+    const glow=i===0?14:Math.max(2,10-i*1.2);
+    const alpha=i===0?1:Math.max(0.2,1-i/snake.length*0.7);
+    drawCell(s.x,s.y,color,glow,alpha);
+    // head details
+    if(i===0) {
+      ctx.fillStyle='#fff'; ctx.shadowBlur=4; ctx.shadowColor='#0f0';
+      const ex = dir.x, ey = dir.y;
+      const ex2 = dir.y, ey2 = -dir.x; // perpendicular
+      ctx.fillRect((s.x+0.5)*CELL-2+(ex2*3),  (s.y+0.5)*CELL-2+(ey2*3),  3,3);
+      ctx.fillRect((s.x+0.5)*CELL-2-(ex2*3),  (s.y+0.5)*CELL-2-(ey2*3),  3,3);
+      ctx.shadowBlur=0;
+    }
+  }
+}
+
+let lastTime=0;
+function loop(ts) {
+  const dt = ts-lastTime; lastTime=ts;
+  if(state!=='playing'){ requestAnimationFrame(loop); return; }
+
+  drawBg();
+  drawFood(ts);
+  drawSnake();
+
+  lastStep+=dt;
+  if(lastStep>=stepInterval){ lastStep=0; step(); }
+
+  requestAnimationFrame(loop);
+}
+
+function showOverlay(title,sub,restart) {
+  overlay.innerHTML=`
+    <h1>${title}</h1>
+    <p style="margin-top:12px;font-size:18px;letter-spacing:4px;">${sub}</p>
+    ${restart?'<p class="blink" style="margin-top:28px;font-size:13px;letter-spacing:3px;">PRESS ENTER TO PLAY AGAIN</p>':'<p class="blink" style="margin-top:28px">INSERT COIN TO PLAY</p>'}
+  `;
+  overlay.style.display='flex';
+}
+
+document.addEventListener('keydown',e=>{
+  const map={'ArrowUp':{x:0,y:-1},'ArrowDown':{x:0,y:1},'ArrowLeft':{x:-1,y:0},'ArrowRight':{x:1,y:0},
+             'w':{x:0,y:-1},'s':{x:0,y:1},'a':{x:-1,y:0},'d':{x:1,y:0}};
+  if(map[e.key]){
+    const nd=map[e.key];
+    if(nd.x!==-dir.x||nd.y!==-dir.y) nextDir=nd;
+    e.preventDefault();
+  }
+  if(state==='title'||(state==='gameover'&&e.key==='Enter')){ overlay.style.display='none'; initGame(); state='playing'; }
+  if((e.key==='p'||e.key==='P')&&state==='playing'){ state='paused'; showOverlay('PAUSED','',false); }
+  else if((e.key==='p'||e.key==='P')&&state==='paused'){ overlay.style.display='none'; state='playing'; }
+  if(e.key==='Escape') window.location.href='../index.html';
+});
+
+showOverlay('NEON SNAKE','',false);
+requestAnimationFrame(t=>{ lastTime=t; requestAnimationFrame(loop); });
+</script>
+</body>
+</html>
