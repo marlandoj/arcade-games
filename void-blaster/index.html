@@ -4,7 +4,6 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>VOID BLASTER — Arcade</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
 <style>
 :root{
   --green:#00ff41; --cyan:#00eeff; --magenta:#ff00ff; --yellow:#ffff00;
@@ -13,7 +12,7 @@
   --glow-c:0 0 8px #00eeff,0 0 24px rgba(0,238,255,0.4);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0;}
-html,body{height:100%;overflow:hidden;background:#000506;font-family:'Press Start 2P',monospace;color:var(--green);}
+html,body{height:100%;overflow:hidden;background:#000506;font-family:'Courier New',monospace;font-weight:700;color:var(--green);}
 body{display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
 
 /* scanlines */
@@ -30,20 +29,31 @@ body::after{
 /* back link */
 #back-link{
   position:fixed;top:12px;left:14px;z-index:80;
-  color:var(--cyan);text-decoration:none;font-size:9px;letter-spacing:1px;
+  color:var(--cyan);text-decoration:none;font-size:12px;letter-spacing:1px;
   background:rgba(0,0,0,0.7);border:1px solid rgba(0,238,255,0.3);
   border-radius:4px;padding:6px 10px;
   text-shadow:var(--glow-c);transition:opacity .2s;
 }
 #back-link:hover{opacity:.7;}
 
-/* mute button */
-#muteBtn{
+/* options row (mute + FX) */
+#opts{
   position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:80;
+  display:flex;gap:8px;
+}
+.optbtn{
   background:rgba(0,0,0,0.7);border:1px solid rgba(0,255,65,0.3);
   color:var(--green);border-radius:4px;padding:5px 10px;cursor:pointer;font-size:14px;
+  font-family:'Courier New',monospace;font-weight:700;letter-spacing:1px;
 }
-#muteBtn:hover{border-color:var(--green);}
+.optbtn:hover{border-color:var(--green);}
+.optbtn[aria-pressed="true"]{border-color:var(--cyan);color:var(--cyan);background:rgba(0,238,255,0.1);}
+
+/* visible keyboard focus */
+.btn:focus-visible,.diff-btn:focus-visible,.optbtn:focus-visible,
+#back-link:focus-visible,.tbtn:focus-visible{
+  outline:2px solid var(--cyan);outline-offset:2px;
+}
 
 /* canvas wrapper */
 #wrap{position:relative;}
@@ -56,15 +66,15 @@ body::after{
 /* HUD bar above canvas */
 #hud{
   width:600px;display:flex;justify-content:space-between;align-items:center;
-  padding:6px 4px;font-size:8px;letter-spacing:1px;
+  padding:6px 4px;font-size:12px;letter-spacing:1px;
 }
 .hud-block{display:flex;flex-direction:column;gap:3px;min-width:140px;}
 .hud-block.center{align-items:center;min-width:160px;}
 .hud-block.right{align-items:flex-end;}
-.hud-label{opacity:.55;font-size:7px;letter-spacing:2px;}
-.hud-val{font-size:11px;text-shadow:var(--glow-g);}
+.hud-label{opacity:.55;font-size:10px;letter-spacing:2px;}
+.hud-val{font-size:15px;text-shadow:var(--glow-g);}
 #lives-icons{letter-spacing:4px;color:var(--green);text-shadow:var(--glow-g);}
-#combo-hud{color:var(--yellow);text-shadow:0 0 8px #ff0,0 0 20px rgba(255,255,0,0.4);font-size:13px;transition:opacity .3s;opacity:0;}
+#combo-hud{color:var(--yellow);text-shadow:0 0 8px #ff0,0 0 20px rgba(255,255,0,0.4);font-size:16px;transition:opacity .3s;opacity:0;}
 #combo-hud.show{opacity:1;}
 
 /* Screens */
@@ -74,28 +84,29 @@ body::after{
   text-align:center;padding:24px;gap:0;
 }
 .screen.hidden{display:none;}
+.hidden{display:none;}
 
 .logo{
   font-size:clamp(22px,5vw,42px);letter-spacing:3px;line-height:1.2;
   color:var(--cyan);text-shadow:0 0 16px var(--cyan),0 0 40px rgba(0,238,255,0.4);
   margin-bottom:12px;
 }
-.sub-logo{font-size:9px;letter-spacing:4px;color:var(--green);opacity:.8;margin-bottom:28px;}
+.sub-logo{font-size:13px;letter-spacing:4px;color:var(--green);opacity:.8;margin-bottom:28px;}
 
 /* difficulty buttons */
 .diff-row{display:flex;gap:12px;margin:14px 0;flex-wrap:wrap;justify-content:center;}
 .diff-btn{
   cursor:pointer;border:1px solid rgba(0,255,65,0.3);background:rgba(0,255,65,0.05);
-  color:var(--green);padding:10px 16px;font-family:'Press Start 2P',monospace;font-size:8px;
+  color:var(--green);padding:10px 16px;font-family:'Courier New',monospace;font-weight:700;font-size:12px;
   border-radius:2px;transition:.15s;line-height:1.6;
 }
-.diff-btn small{display:block;font-size:7px;opacity:.6;margin-top:4px;}
+.diff-btn small{display:block;font-size:11px;opacity:.6;margin-top:4px;}
 .diff-btn.sel{border-color:var(--cyan);background:rgba(0,238,255,0.12);color:var(--cyan);box-shadow:0 0 8px rgba(0,238,255,0.3);}
 .diff-btn:hover{border-color:var(--green);background:rgba(0,255,65,0.1);}
 
 .btn{
   cursor:pointer;border:1px solid var(--green);background:rgba(0,255,65,0.1);
-  color:var(--green);padding:12px 28px;font-family:'Press Start 2P',monospace;font-size:10px;
+  color:var(--green);padding:12px 28px;font-family:'Courier New',monospace;font-weight:700;font-size:14px;
   border-radius:2px;margin:6px;transition:.12s;letter-spacing:1px;
   box-shadow:0 0 8px rgba(0,255,65,0.2);
 }
@@ -106,19 +117,19 @@ body::after{
 
 .help-grid{
   display:grid;grid-template-columns:repeat(2,1fr);gap:6px 20px;
-  font-size:7px;margin:16px 0;max-width:400px;opacity:.8;letter-spacing:1px;
+  font-size:11px;margin:16px 0;max-width:420px;opacity:.8;letter-spacing:1px;
 }
 .help-grid .k{
   display:inline-block;padding:2px 6px;border:1px solid rgba(0,255,65,0.4);
-  border-radius:2px;font-size:6px;margin-right:4px;background:rgba(0,255,65,0.07);
+  border-radius:2px;font-size:10px;margin-right:4px;background:rgba(0,255,65,0.07);
 }
 
 .stats-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 28px;margin:16px 0;}
-.stat-s .n{font-size:18px;color:var(--cyan);text-shadow:var(--glow-c);}
-.stat-s .t{font-size:7px;letter-spacing:2px;opacity:.6;margin-top:3px;}
+.stat-s .n{font-size:22px;color:var(--cyan);text-shadow:var(--glow-c);}
+.stat-s .t{font-size:10px;letter-spacing:2px;opacity:.6;margin-top:3px;}
 
-.best{color:var(--yellow);font-size:8px;margin:8px 0;text-shadow:0 0 8px #ff0;}
-.newhigh{color:var(--yellow);font-size:11px;animation:pulse .5s step-end infinite;text-shadow:0 0 16px #ff0;}
+.best{color:var(--yellow);font-size:12px;margin:8px 0;text-shadow:0 0 8px #ff0;}
+.newhigh{color:var(--yellow);font-size:15px;animation:pulse .5s step-end infinite;text-shadow:0 0 16px #ff0;}
 @keyframes pulse{50%{opacity:0;}}
 @keyframes blink{50%{opacity:0;}}
 .blink{animation:blink 1s step-end infinite;}
@@ -126,7 +137,7 @@ body::after{
 /* toast */
 #toast{
   position:fixed;top:30%;left:50%;transform:translate(-50%,-50%) scale(.85);
-  font-size:14px;letter-spacing:3px;text-align:center;z-index:50;
+  font-size:18px;letter-spacing:3px;text-align:center;z-index:50;
   opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;
   text-shadow:0 0 16px currentColor;
 }
@@ -134,7 +145,7 @@ body::after{
 
 /* floating score popups */
 .pop{
-  position:fixed;font-size:9px;pointer-events:none;font-family:'Press Start 2P',monospace;
+  position:fixed;font-size:13px;pointer-events:none;font-family:'Courier New',monospace;font-weight:700;
   text-shadow:0 0 8px currentColor;transform:translate(-50%,-50%);
   transition:transform .9s ease-out,opacity .9s ease-out;z-index:55;
 }
@@ -142,7 +153,7 @@ body::after{
 /* power-up HUD indicators */
 #powerups-hud{
   position:fixed;right:14px;bottom:120px;display:flex;flex-direction:column;
-  gap:6px;z-index:45;font-size:7px;
+  gap:6px;z-index:45;font-size:11px;
 }
 .pw-fx{
   background:var(--panel);border:1px solid rgba(0,255,65,0.2);
@@ -158,7 +169,7 @@ body::after{
 .tbtn{
   pointer-events:auto;touch-action:none;border-radius:50%;
   display:flex;align-items:center;justify-content:center;
-  font-family:'Press Start 2P',monospace;font-size:10px;
+  font-family:'Courier New',monospace;font-weight:700;font-size:14px;
   border:2px solid rgba(0,255,65,0.5);background:rgba(0,255,65,0.08);
   color:var(--green);width:100%;height:100%;user-select:none;
   box-shadow:0 0 16px rgba(0,255,65,0.2);
@@ -168,15 +179,26 @@ body::after{
 #t-fire .tbtn:active,#t-fire .tbtn.pressed{background:rgba(0,238,255,0.25);border-color:var(--cyan);}
 
 @media(max-width:620px){
-  #hud{width:100%;font-size:7px;}
-  #c{width:100vw;height:auto;}
+  #hud{width:100%;font-size:11px;padding:4px 8px;}
+  .hud-block{min-width:0;}
+  .hud-block.center{min-width:0;}
+}
+/* short screens (landscape phones): shrink chrome so canvas fits */
+@media(max-height:560px){
+  #hud{padding:2px 8px;}
+  #t-left,#t-right{bottom:12px;width:64px;height:64px;}
+  #t-right{left:92px;}
+  #t-fire{bottom:12px;width:72px;height:72px;}
 }
 </style>
 </head>
 <body>
 <div id="scanlines"></div>
 <a id="back-link" href="../index.html">&#8592; BACK</a>
-<button id="muteBtn" title="Mute">&#128266;</button>
+<div id="opts">
+  <button class="optbtn" id="muteBtn" aria-label="Mute sound" aria-pressed="false">&#128266;</button>
+  <button class="optbtn" id="fxBtn" aria-label="Reduce visual effects" aria-pressed="false">FX: FULL</button>
+</div>
 
 <div id="powerups-hud"></div>
 
@@ -204,14 +226,15 @@ body::after{
 
 <!-- canvas -->
 <div id="wrap">
-  <canvas id="c" width="600" height="480"></canvas>
+  <canvas id="c" width="600" height="480" tabindex="-1" role="img"
+    aria-label="Void Blaster play field: move your cannon and shoot the descending aliens"></canvas>
 </div>
 
 <!-- touch controls -->
 <div id="touch">
-  <div id="t-left"><div class="tbtn" id="tb-left">&#9664;</div></div>
-  <div id="t-right"><div class="tbtn" id="tb-right">&#9654;</div></div>
-  <div id="t-fire"><div class="tbtn" id="tb-fire">FIRE</div></div>
+  <div id="t-left"><button class="tbtn" id="tb-left" aria-label="Move left">&#9664;</button></div>
+  <div id="t-right"><button class="tbtn" id="tb-right" aria-label="Move right">&#9654;</button></div>
+  <div id="t-fire"><button class="tbtn" id="tb-fire" aria-label="Fire">FIRE</button></div>
 </div>
 
 <!-- TITLE SCREEN -->
@@ -219,14 +242,14 @@ body::after{
   <div class="logo">VOID<br>BLASTER</div>
   <div class="sub-logo">DEFEND EARTH. ANNIHILATE THE VOID.</div>
   <div class="diff-row" id="diffPick">
-    <button class="diff-btn" data-d="easy">EASY<small>Slow aliens<br>no speed ramp</small></button>
-    <button class="diff-btn sel" data-d="normal">NORMAL<small>Classic pace<br>speed ramp ON</small></button>
-    <button class="diff-btn" data-d="hard">HARD<small>Fast &amp; furious<br>rapid fire</small></button>
+    <button class="diff-btn" data-d="easy" aria-pressed="false">EASY<small>Slow aliens<br>no speed ramp</small></button>
+    <button class="diff-btn sel" data-d="normal" aria-pressed="true">NORMAL<small>Classic pace<br>speed ramp ON</small></button>
+    <button class="diff-btn" data-d="hard" aria-pressed="false">HARD<small>Fast &amp; furious<br>rapid fire</small></button>
   </div>
   <button class="btn" id="playBtn">PLAY &#9654;</button>
   <div class="help-grid">
-    <div><span class="k">&#8592; &#8594;</span>Move</div>
-    <div><span class="k">SPACE</span>Fire</div>
+    <div><span class="k">&#8592; &#8594; / A D</span>Move</div>
+    <div><span class="k">SPACE / &#8593; / W</span>Fire</div>
     <div><span class="k">P / ESC</span>Pause</div>
     <div><span class="k">M</span>Mute</div>
   </div>
@@ -262,6 +285,18 @@ const $ = s => document.querySelector(s);
 const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
 const rand = (a,b) => a+Math.random()*(b-a);
 const randInt = (a,b) => Math.floor(rand(a,b+1));
+
+/* Fail-safe localStorage (private mode / blocked storage must not kill the game) */
+function storeGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function storeSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+/* Reduced-effects mode: persisted, defaults to the OS motion preference */
+let fxReduced = (() => {
+  const saved = storeGet('voidblaster_fx');
+  if(saved === 'reduced') return true;
+  if(saved === 'full') return false;
+  return matchMedia('(prefers-reduced-motion: reduce)').matches;
+})();
 
 /* ============================== *
  *  CANVAS SETUP
@@ -365,14 +400,16 @@ const AW = 32, AH = 22;  // alien width/height
 const PAD_X = 10, PAD_Y = 10;
 const START_X = 36, START_Y = 60;
 
-let state = 'title'; // title|playing|paused|over
+let state = 'title'; // title|playing|paused|waving|over
 let score = 0, lives = 3, wave = 1;
-let best = +(localStorage.getItem('voidblaster_best')||0);
+let best = +(storeGet('voidblaster_best')||0);
 let totalShots = 0, totalHits = 0;
+let session = 0; // bumped on every game start/quit; stale wave timeouts check it
 
 // combo system
 let combo = 1, comboTimer = 0;
 const COMBO_TTL = 3.0; // seconds
+let hudTick = 0; // throttles power-up countdown refreshes
 
 // aliens
 let aliens = [], alienDir = 1, alienStepTimer = 0, alienStepDelay = 600;
@@ -396,10 +433,17 @@ let activePowerups = {}; // key -> timeRemaining
 let particles = [];
 
 // player
-let player = {x:W/2, y:H-48, w:32, h:14, speed:5, cooldown:0, invTimer:0};
+let player = {x:W/2, y:H-48, w:32, h:14, speed:5, cooldown:0, invTimer:0, flash:0};
 let rapidFireActive = false;
 let doubleShot = false;
 let speedBoost = false;
+let pierceShot = false;
+
+// FX state: screen shake + expanding shockwave rings
+let shake = 0;
+let rings = [];
+function addShake(n){ if(!fxReduced) shake = Math.min(10, shake + n); }
+function addRing(x, y, color, maxR=70){ rings.push({x, y, r:6, maxR, color, life:0.5, maxLife:0.5}); }
 
 // starfield (static across sessions)
 const STARS = Array.from({length:90},()=>({
@@ -445,8 +489,9 @@ function resetGame(){
   combo=1; comboTimer=0;
   activePowerups={}; powerups=[];
   particles=[];
-  player={x:W/2,y:H-48,w:32,h:14,speed:5,cooldown:0,invTimer:0};
-  rapidFireActive=false; doubleShot=false; speedBoost=false;
+  player={x:W/2,y:H-48,w:32,h:14,speed:5,cooldown:0,invTimer:0,flash:0};
+  rapidFireActive=false; doubleShot=false; speedBoost=false; pierceShot=false;
+  fireLatch=false; shake=0; rings=[];
   mysteryShip=null; mysteryTimer=0;
   diff=DIFF[diffKey];
   spawnWave(1);
@@ -522,7 +567,8 @@ function drawAlien(a){
 
 function drawPlayer(){
   const p=player;
-  if(p.invTimer>0 && Math.floor(p.invTimer/100)%2===0) return;
+  // blink ~8Hz while invincible (old /100 divisor hid the ship for the whole window)
+  if(p.invTimer>0 && Math.floor(p.invTimer*8)%2===1) return;
   const color='#00ff41';
   ctx.fillStyle=color; ctx.shadowColor=color; ctx.shadowBlur=14;
   // cannon body
@@ -536,7 +582,23 @@ function drawPlayer(){
   ctx.fillStyle='#00ffaa'; ctx.shadowColor='#00ffaa';
   ctx.fillRect(p.x-p.w/2-2, p.y+12, 2, 2);
   ctx.fillRect(p.x+p.w/2+2, p.y+12, 2, 2);
+  // muzzle flash
+  if(p.flash>0){
+    ctx.fillStyle='#aaffff'; ctx.shadowColor='#00eeff'; ctx.shadowBlur=12;
+    const fs=2+p.flash*40;
+    ctx.fillRect(p.x-fs/2, p.y-6-fs, fs, fs);
+  }
   ctx.shadowBlur=0;
+}
+
+function drawRings(){
+  for(const r of rings){
+    ctx.strokeStyle=r.color; ctx.lineWidth=2;
+    ctx.globalAlpha=Math.max(0, r.life/r.maxLife);
+    ctx.shadowColor=r.color; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI*2); ctx.stroke();
+  }
+  ctx.globalAlpha=1; ctx.shadowBlur=0;
 }
 
 function drawMystery(){
@@ -553,11 +615,12 @@ function drawMystery(){
 }
 
 function drawBullets(){
-  // player bullets
-  ctx.fillStyle='#00eeff'; ctx.shadowColor='#00eeff'; ctx.shadowBlur=8;
+  // player bullets (pierce beams render longer + green-tinted)
   for(const b of bullets){
-    ctx.fillRect(b.x-1, b.y, 3, 10);
-    if(b.double) ctx.fillRect(b.x+5, b.y, 3, 10);
+    const c=b.pierce?'#aaff00':'#00eeff', len=b.pierce?16:10;
+    ctx.fillStyle=c; ctx.shadowColor=c; ctx.shadowBlur=8;
+    ctx.fillRect(b.x-1, b.y, 3, len);
+    if(b.double) ctx.fillRect(b.x+5, b.y, 3, len);
   }
   // alien bullets (zigzag visual)
   ctx.fillStyle='#ff4444'; ctx.shadowColor='#ff4444';
@@ -592,7 +655,7 @@ function drawPowerups(){
     ctx.restore();
     // label
     ctx.fillStyle=c; ctx.shadowColor=c; ctx.shadowBlur=4;
-    ctx.font='6px "Press Start 2P",monospace';
+    ctx.font='bold 9px "Courier New",monospace';
     ctx.textAlign='center';
     ctx.fillText(PW_DEFS[pw.type].label, pw.x, pw.y+20);
     ctx.shadowBlur=0;
@@ -629,7 +692,9 @@ const PW_DEFS = {
   speed:   {color:'#00eeff', label:'SPD', duration:8, text:'SPEED BOOST'},
   rapid:   {color:'#ff9900', label:'RFR', duration:7, text:'RAPID FIRE'},
   double:  {color:'#ff00ff', label:'DBL', duration:9, text:'DOUBLE SHOT'},
+  pierce:  {color:'#aaff00', label:'PRC', duration:8, text:'PIERCE BEAM'},
   shield:  {color:'#00ff41', label:'SHD', duration:0, text:'SHIELDS +'},
+  nova:    {color:'#ffffff', label:'NVA', duration:0, text:'NOVA BLAST'},
 };
 
 function spawnPowerup(x, y){
@@ -652,10 +717,20 @@ function applyPowerup(pw){
       }
     }
     toast('SHIELDS RESTORED', '#00ff41');
+  } else if(pw.type==='nova'){
+    // instant: wipe every alien bullet on screen, small bonus per bullet
+    const cleared=alienBullets.length;
+    for(const b of alienBullets) spawnParticles(b.x, b.y, '#ffffff', 5);
+    alienBullets=[];
+    if(cleared>0){ score+=cleared*10; }
+    addRing(pw.x, pw.y, '#ffffff', 180);
+    addShake(6);
+    toast('NOVA BLAST'+(cleared>0?' +'+(cleared*10):''), '#ffffff');
   } else {
     activePowerups[pw.type]=(def.duration||8);
     if(pw.type==='rapid') rapidFireActive=true;
     if(pw.type==='double') doubleShot=true;
+    if(pw.type==='pierce') pierceShot=true;
     if(pw.type==='speed'){ speedBoost=true; player.speed=8; }
     toast(def.text, def.color);
   }
@@ -667,6 +742,7 @@ function applyPowerup(pw){
  *  PARTICLES
  * ============================== */
 function spawnParticles(x, y, color, n=10){
+  if(fxReduced) n=Math.max(2, Math.floor(n/3));
   for(let i=0;i<n;i++){
     const angle=rand(0,Math.PI*2), spd=rand(1,5);
     particles.push({
@@ -679,11 +755,19 @@ function spawnParticles(x, y, color, n=10){
 }
 
 function updateParticles(dt){
+  const k=dt*60; // velocities are tuned in px-per-frame-at-60fps
   particles=particles.filter(p=>{
     p.life-=dt;
-    p.x+=p.vx; p.y+=p.vy; p.vy+=p.gravity;
+    p.x+=p.vx*k; p.y+=p.vy*k; p.vy+=p.gravity*k;
     return p.life>0;
   });
+  rings=rings.filter(r=>{
+    r.life-=dt;
+    r.r+=(r.maxR-r.r)*Math.min(1, dt*10);
+    return r.life>0;
+  });
+  if(shake>0) shake=Math.max(0, shake-dt*30);
+  if(player.flash>0) player.flash=Math.max(0, player.flash-dt);
 }
 
 /* ============================== *
@@ -745,13 +829,13 @@ function checkBulletAlienHit(b){
     if(!a.alive) continue;
     if(b.x+2>=a.x&&b.x-2<=a.x+AW&&b.y<=a.y+AH&&b.y>=a.y){
       killAlien(a, b.x, b.y);
-      return true;
+      return !b.pierce; // pierce beam keeps travelling through the kill
     }
     // double-shot second beam
     if(b.double){
       if(b.x+7>=a.x&&b.x+5<=a.x+AW&&b.y<=a.y+AH&&b.y>=a.y){
         killAlien(a, b.x+6, b.y);
-        return true;
+        return !b.pierce;
       }
     }
   }
@@ -778,11 +862,13 @@ function killAlien(a, bx, by){
  * ============================== */
 const keys={};
 const touch={left:false,right:false,fire:false};
+let fireLatch=false; // edge-triggered: a quick tap between frames still fires
 
 document.addEventListener('keydown', e=>{
   if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key)) e.preventDefault();
   keys[e.key]=true;
   const k=e.key.toLowerCase();
+  if((e.key===' '||e.key==='ArrowUp'||k==='w') && !e.repeat && state==='playing') fireLatch=true;
   if(k==='p'||e.key==='Escape'){
     if(state==='playing') doPause();
     else if(state==='paused') doResume();
@@ -790,25 +876,38 @@ document.addEventListener('keydown', e=>{
   if(k==='m'){ toggleMute(); }
 });
 document.addEventListener('keyup', e=>{ keys[e.key]=false; });
-document.addEventListener('blur', ()=>{ for(const k in keys) keys[k]=false; });
+function releaseAllInput(){
+  for(const k in keys) keys[k]=false;
+  touch.left=touch.right=touch.fire=false;
+  fireLatch=false;
+}
+window.addEventListener('blur', releaseAllInput);
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){ releaseAllInput(); if(state==='playing') doPause(); }
+});
 
-// Touch controls
+// Touch controls — pointer events cover touch + stylus; touchcancel clears stuck input
 function bindTouch(el, prop){
-  el.addEventListener('touchstart',e=>{ touch[prop]=true; e.preventDefault(); },{passive:false});
-  el.addEventListener('touchend',e=>{ touch[prop]=false; e.preventDefault(); },{passive:false});
-  el.addEventListener('touchcancel',e=>{ touch[prop]=false; },{passive:false});
+  el.addEventListener('pointerdown',e=>{ touch[prop]=true; el.classList.add('pressed'); e.preventDefault(); },{passive:false});
+  const off=e=>{ touch[prop]=false; el.classList.remove('pressed'); };
+  el.addEventListener('pointerup',off);
+  el.addEventListener('pointercancel',off);
+  el.addEventListener('pointerleave',off);
+  el.addEventListener('touchcancel',off,{passive:true});
+  el.addEventListener('touchend',e=>{ off(e); e.preventDefault(); },{passive:false});
+  el.addEventListener('click',e=>e.preventDefault()); // buttons: don't re-trigger via keyboard click
 }
-const isTouch = matchMedia('(pointer:coarse)').matches;
-if(isTouch){
-  $('#touch').classList.add('on');
-  bindTouch($('#tb-left'),'left');
-  bindTouch($('#tb-right'),'right');
-  bindTouch($('#tb-fire'),'fire');
-}
+bindTouch($('#tb-left'),'left');
+bindTouch($('#tb-right'),'right');
+bindTouch($('#tb-fire'),'fire');
+function enableTouchUi(){ $('#touch').classList.add('on'); }
+if(matchMedia('(pointer:coarse)').matches) enableTouchUi();
+// late-attached touch screens (convertibles): reveal controls on first real touch
+window.addEventListener('touchstart', function once(){ enableTouchUi(); window.removeEventListener('touchstart', once); }, {passive:true});
 
 function leftHeld(){ return keys['ArrowLeft']||keys['a']||keys['A']||touch.left; }
 function rightHeld(){ return keys['ArrowRight']||keys['d']||keys['D']||touch.right; }
-function fireHeld(){ return keys[' ']||touch.fire; }
+function fireHeld(){ return keys[' ']||keys['ArrowUp']||keys['w']||keys['W']||touch.fire; }
 
 /* ============================== *
  *  UI HELPERS
@@ -853,10 +952,27 @@ function updateHUD(){
   ).join('');
 }
 
+function setMuteUi(m){
+  // real characters, not entity strings — textContent does not parse entities
+  $('#muteBtn').textContent=m?'\u{1F507}':'\u{1F50A}';
+  $('#muteBtn').setAttribute('aria-label', m?'Unmute sound':'Mute sound');
+  $('#muteBtn').setAttribute('aria-pressed', String(m));
+}
 function toggleMute(){
   Sound.init();
   const m=!Sound.isMuted(); Sound.setMuted(m);
-  $('#muteBtn').textContent=m?'&#128263;':'&#128266;';
+  setMuteUi(m);
+  storeSet('voidblaster_muted', m?'1':'0');
+}
+function setFxUi(){
+  $('#fxBtn').textContent=fxReduced?'FX: LOW':'FX: FULL';
+  $('#fxBtn').setAttribute('aria-pressed', String(fxReduced));
+}
+function toggleFx(){
+  fxReduced=!fxReduced;
+  if(fxReduced){ shake=0; }
+  setFxUi();
+  storeSet('voidblaster_fx', fxReduced?'reduced':'full');
 }
 
 /* ============================== *
@@ -864,11 +980,13 @@ function toggleMute(){
  * ============================== */
 function showTitle(){
   state='title';
+  session++;
   $('#titleScreen').classList.remove('hidden');
   $('#pauseScreen').classList.add('hidden');
   $('#overScreen').classList.add('hidden');
   $('#title-best').textContent=best?'HI: '+String(best).padStart(6,'0'):'';
   Sound.mysteryStop();
+  $('#playBtn').focus();
 }
 
 function doPause(){
@@ -876,30 +994,36 @@ function doPause(){
   state='paused';
   $('#pauseScreen').classList.remove('hidden');
   Sound.mysteryStop();
+  $('#resumeBtn').focus();
 }
 
 function doResume(){
   if(state!=='paused') return;
   state='playing';
   $('#pauseScreen').classList.add('hidden');
+  $('#c').focus();
 }
 
 function startGame(){
   Sound.init();
+  session++;
   diff=DIFF[diffKey];
   resetGame();
   state='playing';
   $('#titleScreen').classList.add('hidden');
   $('#overScreen').classList.add('hidden');
   $('#pauseScreen').classList.add('hidden');
+  // SPACE must fire, not re-activate the still-focused PLAY button
+  $('#c').focus();
   toast('WAVE 1', '#00ff41', 1200);
 }
 
 function doGameOver(reason){
   state='over';
+  session++;
   Sound.mysteryStop();
   const isNewBest=score>best;
-  if(isNewBest){ best=score; localStorage.setItem('voidblaster_best',best); Sound.highScore(); }
+  if(isNewBest){ best=score; storeSet('voidblaster_best',best); Sound.highScore(); }
   else Sound.gameOver();
   $('#over-title').textContent=reason==='invaded'?'EARTH INVADED':'GAME OVER';
   $('#over-sub').textContent=
@@ -916,6 +1040,7 @@ function doGameOver(reason){
     `<div class="stat-s"><div class="n">${totalHits}</div><div class="t">ALIENS KILLED</div></div>`;
   $('#over-best').textContent=(isNewBest?'NEW BEST! ':'BEST: ')+String(best).padStart(6,'0');
   $('#overScreen').classList.remove('hidden');
+  $('#againBtn').focus();
 }
 
 /* ============================== *
@@ -940,22 +1065,29 @@ function update(dt){
       delete activePowerups[k];
       if(k==='rapid') rapidFireActive=false;
       if(k==='double') doubleShot=false;
+      if(k==='pierce') pierceShot=false;
       if(k==='speed'){ speedBoost=false; player.speed=5; }
       pwChanged=true;
     }
   }
   if(pwChanged) updateHUD();
+  // keep the visible countdown ticking (updateHUD is otherwise event-driven)
+  hudTick+=dt;
+  if(hudTick>=0.25){ hudTick=0; if(Object.keys(activePowerups).length) updateHUD(); }
 
-  // --- Player movement ---
-  if(leftHeld()) player.x=Math.max(player.w/2+4, player.x-player.speed);
-  if(rightHeld()) player.x=Math.min(W-player.w/2-4, player.x+player.speed);
+  // --- Player movement (k normalizes px-per-frame speeds to a 60fps baseline) ---
+  const k = dt*60;
+  if(leftHeld()) player.x=Math.max(player.w/2+4, player.x-player.speed*k);
+  if(rightHeld()) player.x=Math.min(W-player.w/2-4, player.x+player.speed*k);
 
   // --- Player fire ---
   if(player.cooldown>0) player.cooldown-=dt;
-  if(fireHeld() && player.cooldown<=0){
+  if((fireHeld()||fireLatch) && player.cooldown<=0){
+    fireLatch=false;
     const fireCd = rapidFireActive ? 0.10 : 0.30;
-    bullets.push({x:player.x, y:player.y, vy:10, double:doubleShot});
+    bullets.push({x:player.x, y:player.y, vy:10, double:doubleShot, pierce:pierceShot});
     player.cooldown=fireCd;
+    player.flash=0.07;
     totalShots++;
     Sound.shoot();
     if(doubleShot) Sound.shoot2();
@@ -986,13 +1118,13 @@ function update(dt){
     Sound.mysteryStart();
   }
   if(mysteryShip?.alive){
-    mysteryShip.x+=mysteryShip.vx;
+    mysteryShip.x+=mysteryShip.vx*k;
     if(mysteryShip.x>W+60){ mysteryShip=null; Sound.mysteryStop(); }
   }
 
   // --- Move player bullets ---
   bullets=bullets.filter(b=>{
-    b.y-=b.vy;
+    b.y-=b.vy*k;
     if(b.y<-10) return false;
     // vs shields
     if(shieldHit(b.x,b.y,true)) return false;
@@ -1014,7 +1146,7 @@ function update(dt){
 
   // --- Move alien bullets ---
   alienBullets=alienBullets.filter(b=>{
-    b.y+=b.vy;
+    b.y+=b.vy*k;
     if(b.y>H+10) return false;
     if(shieldHit(b.x,b.y,false)) return false;
     // vs player
@@ -1024,6 +1156,8 @@ function update(dt){
         updateHUD();
         player.invTimer=2.5;
         spawnParticles(player.x,player.y,'#ff3333',18);
+        addRing(player.x, player.y, '#ff3333', 60);
+        addShake(8);
         Sound.playerHit();
         if(lives<=0){ doGameOver('death'); return false; }
         return false;
@@ -1034,7 +1168,7 @@ function update(dt){
 
   // --- Falling powerups ---
   powerups=powerups.filter(pw=>{
-    pw.y+=pw.vy; pw.rot+=0.05; pw.life-=dt;
+    pw.y+=pw.vy*k; pw.rot+=0.05*k; pw.life-=dt;
     if(pw.y>H+20||pw.life<=0) return false;
     // player collects
     if(Math.abs(pw.x-player.x)<24 && Math.abs(pw.y-player.y)<24){
@@ -1057,14 +1191,21 @@ function update(dt){
   if(alive===0){
     Sound.waveClear();
     const nextWave=wave+1;
+    const s=session; // stale timeouts from a quit/restarted game must not fire
     toast('WAVE '+nextWave+' INCOMING!', '#00eeff', 1800);
+    state='waving'; // temporary hold
     setTimeout(()=>{
-      if(state!=='playing') return;
+      if(s!==session||state!=='waving') return;
       spawnWave(nextWave);
       updateHUD();
+      state='playing';
     }, 1800);
-    state='waving'; // temporary hold
-    setTimeout(()=>{ if(state==='waving') state='playing'; }, 1800);
+  }
+
+  // --- Starfield drift ---
+  for(const st of STARS){
+    st.y+=st.s*8*dt;
+    if(st.y>H){ st.y=-2; st.x=Math.random()*W; }
   }
 }
 
@@ -1072,8 +1213,10 @@ function update(dt){
  *  DRAW — main render
  * ============================== */
 function draw(){
+  ctx.save();
+  if(shake>0 && !fxReduced) ctx.translate(rand(-shake,shake), rand(-shake,shake));
   ctx.fillStyle='#000506';
-  ctx.fillRect(0,0,W,H);
+  ctx.fillRect(-12,-12,W+24,H+24);
   drawStarfield();
   // faint ground line
   drawLine(H-32,'rgba(0,255,65,0.08)');
@@ -1089,7 +1232,9 @@ function draw(){
     drawPlayer();
     drawMystery();
     drawParticles();
+    drawRings();
   }
+  ctx.restore();
 }
 
 /* ============================== *
@@ -1111,7 +1256,10 @@ requestAnimationFrame(loop);
 $('#diffPick').addEventListener('click', e=>{
   const b=e.target.closest('.diff-btn'); if(!b) return;
   diffKey=b.dataset.d;
-  [...$('#diffPick').children].forEach(c=>c.classList.toggle('sel',c===b));
+  [...$('#diffPick').children].forEach(c=>{
+    c.classList.toggle('sel',c===b);
+    c.setAttribute('aria-pressed', String(c===b));
+  });
   Sound.init(); Sound.click();
 });
 $('#playBtn').addEventListener('click',()=>{ Sound.click(); startGame(); });
@@ -1120,20 +1268,26 @@ $('#resumeBtn').addEventListener('click',()=>{ Sound.click(); doResume(); });
 $('#quitBtn').addEventListener('click',()=>{ Sound.click(); showTitle(); });
 $('#menuBtn').addEventListener('click',()=>{ Sound.click(); showTitle(); });
 $('#muteBtn').addEventListener('click',()=>toggleMute());
+$('#fxBtn').addEventListener('click',()=>{ Sound.init(); Sound.click(); toggleFx(); });
 
-// init title best
+// init persisted options + title best
+Sound.setMuted(storeGet('voidblaster_muted')==='1');
+setMuteUi(Sound.isMuted());
+setFxUi();
 $('#title-best').textContent=best?'HI: '+String(best).padStart(6,'0'):'';
 
-// Responsive canvas sizing
+// Responsive canvas sizing — fit BOTH axes (landscape phones have short viewports)
 function resize(){
-  const maxW=Math.min(window.innerWidth-4, 600);
-  const scale=maxW/600;
+  const hudH=$('#hud').offsetHeight||54;
+  const availW=window.innerWidth-8;
+  const availH=window.innerHeight-hudH-52; // top controls row + breathing room
+  const scale=Math.min(availW/600, availH/480, 1);
   canvas.style.width=(600*scale)+'px';
   canvas.style.height=(480*scale)+'px';
-  const hudEl=$('#hud');
-  hudEl.style.width=(600*scale)+'px';
+  $('#hud').style.width=(600*scale)+'px';
 }
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', resize);
 resize();
 </script>
 </body>
