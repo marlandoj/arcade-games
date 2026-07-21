@@ -1,0 +1,13 @@
+{
+	"id": "./",
+	"name": "KINTSPARK: Fracture Run",
+	"short_name": "KINTSPARK",
+	"description": "An original strategic maze-chase game for Zouroboros Arcade.",
+	"start_url": "./",
+	"scope": "./",
+	"display": "fullscreen",
+	"orientation": "any",
+	"background_color": "#111319",
+	"theme_color": "#111319",
+	"categories": ["games", "entertainment"]
+}
