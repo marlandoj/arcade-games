@@ -8,6 +8,7 @@ A registry-driven HTML5 arcade hub. Add a game by dropping a directory and one e
 
 | ID | Title | Features |
 |----|-------|----------|
+| `kintspark-fracture-run` | **KINTSPARK: Fracture Run** — Repair the Maze | Six authored levels, four readable enemy policies, accessibility assists, keyboard/touch/gamepad, offline play |
 | `cow-abductor` | **Cow Abductors** — 3D UFO Farm Heist | 3D Three.js, tractor beam, combos, minimap, power-ups, mobile joystick |
 | `void-blaster` | **Void Blaster** — Space Invaders | Waves, bunkers, mystery ship, combo×4, power-ups, mobile controls |
 | `asteroid-drift` | **Asteroid Drift** — Vector Space | Splitting rocks, UFOs, hyperspace, shield bar, particles, mobile joystick |
@@ -21,14 +22,15 @@ arcade-games/
 ├── registry.json           # Catalog source of truth
 ├── thumbnails/             # Game thumbnail images (PNG)
 ├── <game-id>/
-│   └── index.html          # Self-contained single-file game
+│   ├── index.html          # Game entry point
+│   └── assets/             # Optional relative static assets
 └── scripts/
     └── validate-registry.ts
 ```
 
 ## Add a game
 
-1. Create `<game-id>/index.html` — single self-contained file (inline CSS/JS).
+1. Create `<game-id>/index.html` as a self-contained game or a relative static bundle with local assets.
 2. Add an entry to `registry.json`:
    ```json
    {

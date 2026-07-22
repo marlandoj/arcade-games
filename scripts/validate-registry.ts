@@ -20,7 +20,7 @@
  */
 
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { resolve, dirname, join, normalize } from "node:path";
+import { basename, resolve, dirname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
@@ -96,18 +96,25 @@ function validateEntry(entry: unknown, registryDir: string): string[] {
   }
 
   if (isString(e.path)) {
-    // Path must be relative and point to a directory (trailing slash expected).
+    // Path must be relative and may follow either the documented index-file
+    // contract or the legacy directory contract.
     if (e.path.startsWith("/")) {
       errors.push(`[${id}] path must be relative (got "${e.path}")`);
     }
-    const dirPath = resolve(registryDir, e.path);
-    if (!existsSync(dirPath) || !statSync(dirPath).isDirectory()) {
-      errors.push(`[${id}] directory not found at "${e.path}" (resolved: ${dirPath})`);
-    } else {
-      const indexPath = join(dirPath, "index.html");
+    const gamePath = resolve(registryDir, e.path);
+    if (!existsSync(gamePath)) {
+      errors.push(`[${id}] game path not found at "${e.path}" (resolved: ${gamePath})`);
+    } else if (statSync(gamePath).isFile()) {
+      if (basename(gamePath) !== "index.html") {
+        errors.push(`[${id}] game path must resolve to index.html (resolved: ${gamePath})`);
+      }
+    } else if (statSync(gamePath).isDirectory()) {
+      const indexPath = join(gamePath, "index.html");
       if (!existsSync(indexPath) || !statSync(indexPath).isFile()) {
         errors.push(`[${id}] index.html not found in "${e.path}" (resolved: ${indexPath})`);
       }
+    } else {
+      errors.push(`[${id}] game path is not a file or directory (resolved: ${gamePath})`);
     }
   }
 
