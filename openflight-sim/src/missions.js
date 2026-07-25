@@ -84,20 +84,34 @@ export function createMissions() {
     },
 
     grade(sim) {
-      const held = Math.min(30, headingScore);
-      const score = Math.round((held / 30) * 100);
+      // Navigation missions are scored by heading-hold time. Free Flight is
+      // type `freeflight`, so it must NOT be scored by the heading metric
+      // (ZOU-920 remediation #11): score it by sustained flight time instead.
+      if (activeMission && activeMission.type === "navigation") {
+        const held = Math.min(30, headingScore);
+        const score = Math.round((held / 30) * 100);
+        const grade = score >= 90 ? "S" : score >= 75 ? "A" : score >= 60 ? "B" : score >= 40 ? "C" : "D";
+        return Object.freeze({
+          score,
+          grade,
+          summary: `Heading held ${held.toFixed(0)} s of 30 s.`,
+          touchdownVs: 0,
+          centrelineOffset: 0,
+          touchdownPoint: 0,
+          headingHeld: held,
+        });
+      }
+      const dur = Math.max(0, timer);
+      const score = Math.min(100, Math.round((dur / 60) * 100));
       const grade = score >= 90 ? "S" : score >= 75 ? "A" : score >= 60 ? "B" : score >= 40 ? "C" : "D";
-      const summary = activeMission && activeMission.type === "navigation"
-        ? `Heading held ${held.toFixed(0)} s of 30 s.`
-        : "Free flight complete.";
       return Object.freeze({
         score,
         grade,
-        summary,
+        summary: `Free flight: ${Math.round(dur)} s airborne.`,
         touchdownVs: 0,
         centrelineOffset: 0,
         touchdownPoint: 0,
-        headingHeld: held,
+        headingHeld: 0,
       });
     },
 

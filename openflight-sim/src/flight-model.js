@@ -55,12 +55,22 @@ export function airframeList() {
 }
 
 export function createFlightModel(airframeKey) {
-  const airframe = AIRFRAMES[airframeKey] || AIRFRAMES.trainer;
+  let airframe = AIRFRAMES[airframeKey] || AIRFRAMES.trainer;
   let lastForces = { lift: 0, drag: 0, thrust: 0, side: 0, weight: 0 };
   let lastAero = { alpha: 0, beta: 0, aoa: 0, loadFactor: 1, stalled: false };
 
   return {
-    airframe,
+    get airframe() { return airframe; },
+
+    /**
+     * Re-bind the model to a different airframe so the briefing screen's
+     * selection is what actually flies (ZOU-920 remediation #1).
+     */
+    setAirframe(airframeKey) {
+      airframe = AIRFRAMES[airframeKey] || AIRFRAMES.trainer;
+      lastForces = { lift: 0, drag: 0, thrust: 0, side: 0, weight: 0 };
+      lastAero = { alpha: 0, beta: 0, aoa: 0, loadFactor: 1, stalled: false };
+    },
 
     /**
      * Integrate one fixed step. Stub holds a stable trimmed cruise: it
@@ -78,8 +88,23 @@ export function createFlightModel(airframeKey) {
       const speed = sim.vel.length();
       const nextSpeed = approach(speed, targetSpeed, 4 * dt);
 
-      sim.vel.copy(forward).multiplyScalar(nextSpeed);
-      sim.pos.addScaledVector(sim.vel, dt);
+      // Finite guard (ZOU-920 remediation #7): compute candidate state into
+      // locals and commit only if every component is finite, so one bad
+      // frame (NaN/Infinity) cannot permanently corrupt the simulation.
+      const newVx = forward.x * nextSpeed;
+      const newVy = forward.y * nextSpeed;
+      const newVz = forward.z * nextSpeed;
+      const newPx = sim.pos.x + newVx * dt;
+      const newPy = sim.pos.y + newVy * dt;
+      const newPz = sim.pos.z + newVz * dt;
+      if (
+        !Number.isFinite(newVx) || !Number.isFinite(newVy) || !Number.isFinite(newVz) ||
+        !Number.isFinite(newPx) || !Number.isFinite(newPy) || !Number.isFinite(newPz)
+      ) {
+        return;
+      }
+      sim.vel.set(newVx, newVy, newVz);
+      sim.pos.set(newPx, newPy, newPz);
 
       const lift = 0.5 * rho * a.referenceArea * nextSpeed * nextSpeed * 0.4;
       const drag = 0.5 * rho * a.referenceArea * nextSpeed * nextSpeed * 0.03;
