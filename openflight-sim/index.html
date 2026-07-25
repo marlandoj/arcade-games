@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#05080f" />
+<title>OpenFlight Sim — Zouroboros Arcade</title>
+<link rel="icon" href="data:," />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --cyan: #22d3ee;
+    --amber: #f7bf53;
+    --green: #46e36b;
+    --red: #ff4d4d;
+    --magenta: #f472b6;
+    --ink: #d7e3f0;
+    --dim: #6b7a8f;
+    --panel: rgba(6, 10, 18, 0.82);
+    --pixel: 'Press Start 2P', monospace;
+    --mono: 'Share Tech Mono', ui-monospace, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; background: #05080f; color: var(--ink); font-family: var(--mono); }
+  #scene { display: block; position: fixed; inset: 0; width: 100vw; height: 100vh; }
+
+  /* ── CRT overlay ──────────────────────────────────────────── */
+  .crt::after {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 40;
+    background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0,0,0,0.18) 3px 4px);
+    mix-blend-mode: multiply;
+  }
+  .crt::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 41;
+    background: radial-gradient(ellipse at 50% 50%, transparent 60%, rgba(0,0,0,0.55) 100%);
+  }
+
+  /* ── Back link + mute ────────────────────────────────────── */
+  #back-link {
+    position: fixed; top: 14px; left: 16px; z-index: 60;
+    color: var(--cyan); text-decoration: none; font-family: var(--pixel);
+    font-size: 9px; letter-spacing: 1px; text-shadow: 0 0 6px var(--cyan);
+    background: rgba(0,0,0,0.7); padding: 7px 13px; border: 1px solid rgba(34,211,238,0.35);
+  }
+  #back-link:hover { text-shadow: 0 0 14px var(--cyan), 0 0 28px var(--cyan); border-color: var(--cyan); }
+  #mute-btn {
+    position: fixed; top: 14px; right: 16px; z-index: 60;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.14);
+    color: var(--ink); border-radius: 8px; padding: 7px 11px; font-size: 15px;
+    cursor: pointer; backdrop-filter: blur(6px);
+  }
+
+  /* ── HUD overlay ─────────────────────────────────────────── */
+  #hud { position: fixed; inset: 0; z-index: 30; pointer-events: none; display: none; }
+  .ofs-hud {
+    position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 14px; background: rgba(4,8,14,0.55); border: 1px solid rgba(34,211,238,0.25);
+    padding: 8px 14px; font-family: var(--mono); font-size: 13px; color: var(--cyan);
+    text-shadow: 0 0 6px rgba(34,211,238,0.5); letter-spacing: 0.06em;
+  }
+  .ofs-hud-row { display: flex; gap: 5px; align-items: baseline; }
+  .ofs-hud-row span { opacity: 0.6; font-size: 10px; }
+  .ofs-hud-row b { font-size: 16px; font-weight: 700; color: #eafcff; }
+  .ofs-panel {
+    position: absolute; left: 16px; bottom: 16px; width: 220px;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.10); padding: 12px;
+    font-family: var(--mono); font-size: 12px; display: flex; flex-direction: column; gap: 9px;
+    backdrop-filter: blur(6px);
+  }
+  .ofs-panel-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .ofs-panel-row > span { color: var(--dim); letter-spacing: 0.1em; font-size: 10px; }
+  .ofs-panel-row > b { color: var(--ink); font-size: 13px; }
+  .ofs-bar { flex: 1; height: 9px; background: rgba(255,255,255,0.10); border-radius: 5px; overflow: hidden; }
+  .ofs-bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), var(--green)); transition: width 0.1s linear; }
+
+  /* ── Screens ─────────────────────────────────────────────── */
+  #screen-root { position: fixed; inset: 0; z-index: 50; }
+  .ofs-screen {
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    flex-direction: column; text-align: center; padding: 28px;
+    background: radial-gradient(ellipse at 50% 25%, rgba(10,30,50,0.55), rgba(3,5,12,0.94));
+    backdrop-filter: blur(5px);
+  }
+  .ofs-screen.is-active { display: flex; }
+  .ofs-logo {
+    font-family: var(--pixel); font-size: clamp(22px, 4.6vw, 46px); color: var(--cyan);
+    text-shadow: 0 0 8px var(--cyan), 0 0 28px rgba(34,211,238,0.6), 0 0 60px rgba(34,211,238,0.3);
+    letter-spacing: 0.08em; line-height: 1.25;
+  }
+  .ofs-sub { font-family: var(--pixel); font-size: 9px; color: var(--amber); letter-spacing: 0.18em; margin-top: 14px; text-shadow: 0 0 8px var(--amber); }
+  .ofs-tag { font-family: var(--mono); font-size: 14px; color: var(--dim); max-width: 560px; margin: 18px auto 0; line-height: 1.6; }
+  .ofs-credit { font-family: var(--pixel); font-size: 8px; color: var(--dim); margin-top: 26px; letter-spacing: 0.12em; }
+  .ofs-cta {
+    margin-top: 22px; font-family: var(--pixel); font-size: 11px; color: var(--ink);
+    border: 2px solid var(--cyan); padding: 13px 26px; cursor: pointer; background: transparent;
+    letter-spacing: 0.12em; transition: all 0.12s; text-shadow: 0 0 6px var(--cyan);
+  }
+  .ofs-cta:hover { background: var(--cyan); color: #05080f; text-shadow: none; box-shadow: 0 0 22px var(--cyan); }
+  .ofs-hint { font-family: var(--mono); font-size: 12px; color: var(--dim); margin-top: 18px; }
+  .ofs-hint kbd {
+    display: inline-block; min-width: 26px; padding: 3px 7px; margin: 0 3px;
+    border: 1px solid rgba(255,255,255,0.22); border-radius: 5px; font-family: var(--mono);
+    font-size: 11px; color: var(--ink); background: rgba(255,255,255,0.05);
+  }
+  .ofs-brief-grid { display: flex; flex-direction: column; gap: 16px; max-width: 640px; width: 100%; margin-top: 20px; }
+  .ofs-brief-section { text-align: left; }
+  .ofs-brief-label { font-family: var(--pixel); font-size: 9px; color: var(--green); letter-spacing: 0.14em; margin-bottom: 8px; text-shadow: 0 0 6px var(--green); }
+  .ofs-pick { display: flex; flex-wrap: wrap; gap: 8px; }
+  .ofs-pick button {
+    flex: 1 1 180px; cursor: pointer; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.16);
+    color: var(--ink); padding: 10px 14px; font-family: var(--mono); font-size: 14px; text-align: left; transition: 0.12s;
+  }
+  .ofs-pick button small { display: block; font-size: 11px; color: var(--dim); margin-top: 4px; }
+  .ofs-pick button.sel { border-color: var(--cyan); background: rgba(34,211,238,0.14); box-shadow: 0 0 0 2px rgba(34,211,238,0.18) inset; }
+  .ofs-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
+  .ofs-cta.ghost { border-color: rgba(255,255,255,0.25); color: var(--dim); text-shadow: none; font-size: 10px; padding: 10px 18px; }
+
+  /* ── Debrief ─────────────────────────────────────────────── */
+  .ofs-debrief-title { font-family: var(--pixel); font-size: clamp(18px, 3.4vw, 30px); color: var(--ink); margin-bottom: 14px; letter-spacing: 0.08em; }
+  .ofs-debrief-grade { font-family: var(--pixel); font-size: clamp(48px, 10vw, 88px); line-height: 1; margin: 6px 0; }
+  .ofs-debrief-grade.grade-S { color: var(--amber); text-shadow: 0 0 20px var(--amber); }
+  .ofs-debrief-grade.grade-A { color: var(--green); text-shadow: 0 0 16px var(--green); }
+  .ofs-debrief-grade.grade-B { color: var(--cyan); text-shadow: 0 0 14px var(--cyan); }
+  .ofs-debrief-grade.grade-C { color: var(--ink); }
+  .ofs-debrief-grade.grade-D { color: var(--red); text-shadow: 0 0 14px var(--red); }
+  .ofs-debrief-score { font-family: var(--mono); font-size: 28px; color: var(--ink); }
+  .ofs-debrief-score span { font-size: 16px; color: var(--dim); }
+  .ofs-debrief-summary { font-family: var(--mono); font-size: 14px; color: var(--dim); margin: 16px auto 0; max-width: 480px; }
+  .ofs-debrief-stats { display: flex; gap: 26px; margin: 22px 0 6px; flex-wrap: wrap; justify-content: center; }
+  .ofs-debrief-stats > div { display: flex; flex-direction: column; gap: 4px; }
+  .ofs-debrief-stats span { font-size: 10px; color: var(--dim); letter-spacing: 0.12em; text-transform: uppercase; }
+  .ofs-debrief-stats b { font-size: 20px; color: var(--cyan); }
+
+  /* ── Pause ───────────────────────────────────────────────── */
+  .ofs-pause-title { font-family: var(--pixel); font-size: clamp(28px, 6vw, 54px); color: var(--amber); text-shadow: 0 0 12px var(--amber); letter-spacing: 0.1em; }
+
+  @media (max-width: 720px) {
+    .ofs-panel { width: 168px; font-size: 11px; }
+    .ofs-hud { font-size: 11px; gap: 9px; padding: 6px 10px; }
+    .ofs-hud-row b { font-size: 13px; }
+  }
+</style>
+</head>
+<body class="crt">
+
+<canvas id="scene"></canvas>
+
+<a id="back-link" href="../index.html" title="Back to Arcade">← BACK</a>
+<button id="mute-btn" title="Mute (M)">🔊</button>
+
+<div id="hud"></div>
+
+<div id="screen-root" data-screen="title">
+  <!-- Title -->
+  <section class="ofs-screen" id="screen-title">
+    <div class="ofs-logo">OPENFLIGHT<br />SIM</div>
+    <div class="ofs-sub">— STUDY-LEVEL BROWSER FLIGHT —</div>
+    <div class="ofs-tag">A fixed-step rigid-body flight simulator built by the Zouroboros Software Factory on open-weights models. Wave 1 shell: title, briefing, fixed-step orchestrator, and the module boundaries the later waves drop into.</div>
+    <button class="ofs-cta" id="start-btn">▶ START</button>
+    <div class="ofs-hint"><kbd>Enter</kbd>/<kbd>Space</kbd> begin &nbsp; <kbd>P</kbd> pause &nbsp; <kbd>Esc</kbd> back to arcade</div>
+    <div class="ofs-credit">OFS-001 · T1 SHELL · v0.1.0</div>
+  </section>
+
+  <!-- Briefing -->
+  <section class="ofs-screen" id="screen-briefing">
+    <div class="ofs-logo" style="font-size:clamp(18px,3.4vw,30px)">FLIGHT BRIEFING</div>
+    <div class="ofs-brief-grid">
+      <div class="ofs-brief-section">
+        <div class="ofs-brief-label">▸ AIRFRAME</div>
+        <div class="ofs-pick" id="briefing-airframe"></div>
+      </div>
+      <div class="ofs-brief-section">
+        <div class="ofs-brief-label">▸ MISSION</div>
+        <div class="ofs-pick" id="briefing-mission"></div>
+      </div>
+    </div>
+    <div class="ofs-row">
+      <button class="ofs-cta" id="launch-btn">▲ LAUNCH</button>
+      <button class="ofs-cta ghost" id="briefing-back-btn">BACK</button>
+    </div>
+    <div class="ofs-hint"><kbd>Enter</kbd> launch &nbsp; <kbd>Backspace</kbd> back</div>
+  </section>
+
+  <!-- Pause -->
+  <section class="ofs-screen" id="screen-paused">
+    <div class="ofs-pause-title">PAUSED</div>
+    <div class="ofs-tag">Simulation clock held. The integrator is bounded and waiting.</div>
+    <button class="ofs-cta" id="resume-btn">▶ RESUME</button>
+    <button class="ofs-cta ghost" id="pause-quit-btn">QUIT TO TITLE</button>
+    <div class="ofs-hint"><kbd>P</kbd> resume &nbsp; <kbd>Esc</kbd> back to arcade</div>
+  </section>
+
+  <!-- Debrief -->
+  <section class="ofs-screen" id="screen-debrief">
+    <div class="ofs-debrief-title">DEBRIEF</div>
+    <div id="debrief-content"></div>
+    <div class="ofs-row">
+      <button class="ofs-cta" id="retry-btn">↻ AGAIN</button>
+      <button class="ofs-cta ghost" id="debrief-menu-btn">TITLE</button>
+    </div>
+    <div class="ofs-hint"><kbd>Enter</kbd> again &nbsp; <kbd>Backspace</kbd> title</div>
+  </section>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "https://esm.sh/three@0.160.0" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
