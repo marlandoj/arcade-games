@@ -28,15 +28,29 @@ export const WEATHER_PRESETS = Object.freeze({
 /**
  * International Standard Atmosphere sample at a given geometric altitude.
  * Returns temperature (K), pressure (Pa), density (kg/m^3), speed of sound
- * (m/s), and dynamic viscosity (Pa·s). Stub returns sea-level values; T2
- * implements the full troposphere + tropopause + density-altitude correction.
+ * (m/s), and dynamic viscosity (Pa·s). Troposphere lapse below 11 km; the
+ * isothermal stratosphere relation above (ZOU-920 remediation #12). T2 will
+ * add the density-altitude correction; the call sites here are frozen.
  */
 export function atmosphere(altitudeM) {
   const h = Math.max(0, altitudeM || 0);
-  const T = ISA.seaLevelTemperature + ISA.lapseRate * Math.min(h, ISA.tropopause);
-  const p = ISA.seaLevelPressure * Math.pow(T / ISA.seaLevelTemperature, 5.25588);
-  const rho = p / (ISA.gasConstant * T);
-  const a = Math.sqrt(ISA.gamma * ISA.gasConstant * T);
+  const g = 9.80665;
+  const R = ISA.gasConstant;
+  const lapseMagnitude = -ISA.lapseRate; // 0.0065 K/m
+  const exponent = g / (R * lapseMagnitude); // ~5.25588
+  let T, p;
+  if (h < ISA.tropopause) {
+    T = ISA.seaLevelTemperature + ISA.lapseRate * h;
+    p = ISA.seaLevelPressure * Math.pow(T / ISA.seaLevelTemperature, exponent);
+  } else {
+    // Above the tropopause temperature is constant (isothermal); pressure
+    // decays exponentially from the tropopause value, not the troposphere power law.
+    T = ISA.seaLevelTemperature + ISA.lapseRate * ISA.tropopause;
+    const pTrop = ISA.seaLevelPressure * Math.pow(T / ISA.seaLevelTemperature, exponent);
+    p = pTrop * Math.exp(-g * (h - ISA.tropopause) / (R * T));
+  }
+  const rho = p / (R * T);
+  const a = Math.sqrt(ISA.gamma * R * T);
   const mu = 1.716e-5 * Math.pow(T / 273.15, 0.75);
   return Object.freeze({
     altitude: h,

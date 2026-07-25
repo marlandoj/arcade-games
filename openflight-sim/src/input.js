@@ -23,9 +23,21 @@ export function createInput(target = window) {
   const keys = new Set();
   const gamepads = new Map();
 
+  // Persistent actuator state (ZOU-920 remediation #3, #4).
+  let throttle = 0.6;          // persists across polls; slews at a bounded rate
+  let flaps = 0;               // discrete detent per keypress edge
+  let lastPoll = 0;            // wall-clock time of the previous poll (ms)
+
+  const THROTTLE_SLEW_PER_SEC = 0.5;  // full range in ~2 s
+  const FLAPS_DETENT = 10;            // 4 detents to max deflection (40)
+  const MAX_SLEW_DT = 0.25;           // clamp per-poll slew window (matches MAX_FRAME_TIME)
+
   function down(e) {
     const k = normalize(e.key);
     if (k) keys.add(k);
+    // Flaps actuate one detent per physical keypress (ZOU-920 #3); auto-repeat
+    // (e.repeat) is ignored so a held key cannot saturate in a single frame.
+    if (k === "f" && !e.repeat) flaps = clamp(flaps + FLAPS_DETENT, 0, 40);
   }
   function up(e) {
     const k = normalize(e.key);
@@ -43,8 +55,8 @@ export function createInput(target = window) {
 
   return {
     poll() {
-      let pitch = 0, roll = 0, yaw = 0, throttle = 0;
-      let brakes = 0, flaps = 0, gear = 1;
+      let pitch = 0, roll = 0, yaw = 0;
+      let brakes = 0, gear = 1;
       let viewToggle = false, hudToggle = false;
 
       if (keys.has("arrowup") || keys.has("s")) pitch -= 1;
@@ -53,11 +65,17 @@ export function createInput(target = window) {
       if (keys.has("arrowright") || keys.has("d")) roll += 1;
       if (keys.has("q")) yaw -= 1;
       if (keys.has("e")) yaw += 1;
-      if (keys.has("shift")) throttle = Math.min(1, throttle + 1);
-      else if (keys.has("control")) throttle = Math.max(0, throttle - 1);
-      else throttle = 0.6;
+
+      // Throttle persists and slews at a bounded per-second rate (ZOU-920 #4):
+      // Shift slews up, Control slews down, otherwise the setting holds.
+      const now = (typeof performance !== "undefined" ? performance.now() : Date.now());
+      const dtSlew = lastPoll ? Math.min(MAX_SLEW_DT, Math.max(0, (now - lastPoll) / 1000)) : 0;
+      lastPoll = now;
+      const slew = THROTTLE_SLEW_PER_SEC * dtSlew;
+      if (keys.has("shift")) throttle = Math.min(1, throttle + slew);
+      else if (keys.has("control")) throttle = Math.max(0, throttle - slew);
+
       if (keys.has(" ")) brakes = 1;
-      if (keys.has("f")) flaps = Math.min(40, flaps + 5);
       if (keys.has("g")) gear = 0;
       if (keys.has("v")) viewToggle = true;
       if (keys.has("h")) hudToggle = true;
@@ -68,7 +86,7 @@ export function createInput(target = window) {
         const rt = gp.buttons[7] && gp.buttons[7].value;
         if (Math.abs(ay) > 0.12) pitch -= ay;
         if (Math.abs(ax) > 0.12) roll += ax;
-        if (rt) throttle = rt;
+        if (rt && rt > 0.01) throttle = rt;
       }
 
       pitch = clamp(pitch, -1, 1);
@@ -76,14 +94,13 @@ export function createInput(target = window) {
       yaw = clamp(yaw, -1, 1);
       throttle = clamp(throttle, 0, 1);
       brakes = clamp(brakes, 0, 1);
-      flaps = clamp(flaps, 0, 40);
 
       return Object.freeze({
         pitch, roll, yaw, throttle, brakes, flaps, gear, viewToggle, hudToggle,
       });
     },
     pressed(key) { return keys.has(normalize(key)); },
-    reset() { keys.clear(); },
+    reset() { keys.clear(); throttle = 0.6; flaps = 0; lastPoll = 0; },
     dispose() {
       target.removeEventListener("keydown", down);
       target.removeEventListener("keyup", up);

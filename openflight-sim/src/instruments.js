@@ -56,10 +56,12 @@ export function createInstruments(root) {
       el.hdg.textContent = pad3(Math.round(hdgDeg));
       el.vs.textContent = (fpm >= 0 ? "+" : "") + Math.round(fpm);
       el.rpm.textContent = Math.round((sim.rpm || 0) * 100);
-      el.thr.style.width = pct(sim.controls.throttle);
+      // Read display state from the live sim object (ZOU-920 remediation #9),
+      // not from sim.controls which is replaced wholesale each fixed step.
+      el.thr.style.width = pct(sim.throttle);
       el.fuel.style.width = pct(sim.fuel);
-      el.gear.textContent = sim.controls.gear ? "DOWN" : "UP";
-      el.flaps.textContent = sim.controls.flaps.toFixed(0);
+      el.gear.textContent = sim.gear ? "DOWN" : "UP";
+      el.flaps.textContent = (sim.flaps || 0).toFixed(0);
     },
     setHudVisible(v) { hudVisible = !!v; hud.style.display = v ? "" : "none"; },
     setPanelVisible(v) { panelVisible = !!v; panel.style.display = v ? "" : "none"; },

@@ -33,9 +33,7 @@ export function createAudio() {
     resume() { if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {}); },
     update(sim) {
       if (!ctx || muted || !started) return;
-      const target = 0.0001 + 0.05 * (sim.rpm || 0);
       if (master) master.gain.setTargetAtTime(muted ? 0 : 0.5, ctx.currentTime, 0.05);
-      void target;
     },
     setMuted(m) {
       muted = !!m;

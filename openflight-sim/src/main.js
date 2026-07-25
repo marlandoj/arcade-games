@@ -48,11 +48,15 @@ const sim = {
   verticalSpeed: 0,
   rpm: 0.6,
   fuel: 100,
+  throttle: 0.6,
+  gear: 1,
+  flaps: 0,
   controls: { ...CONTROLS_SHAPE },
   mission: null,
   result: null,
   substeps: 0,
   accumulator: 0,
+  debt: 0,
 };
 
 const flightModel = createFlightModel(sim.airframe);
@@ -89,6 +93,10 @@ function setScreen(next) {
 
 function beginFlight() {
   sim.airframe = selectedAirframe;
+  // Wire the briefing selection through (ZOU-920 remediation #1): the chosen
+  // airframe is what actually flies.
+  flightModel.setAirframe(selectedAirframe);
+  input.reset();
   sim.pos.set(0, 300, -200);
   sim.prevPos.copy(sim.pos);
   sim.vel.set(0, 0, AIRFRAMES[sim.airframe].cruiseSpeed * 0.7);
@@ -99,6 +107,10 @@ function beginFlight() {
   sim.verticalSpeed = sim.vel.y;
   sim.fuel = 100;
   sim.rpm = 0.6;
+  sim.throttle = 0.6;
+  sim.gear = 1;
+  sim.flaps = 0;
+  sim.debt = 0;
   sim.t = 0;
   sim.result = null;
   missions.reset();
@@ -118,16 +130,49 @@ function renderDebrief() {
   const el = document.getElementById("debrief-content");
   if (!el) return;
   const m = MISSIONS.find((x) => x.id === selectedMissionId) || MISSIONS[0];
-  el.innerHTML = `
-    <div class="ofs-debrief-title">${m.title}</div>
-    <div class="ofs-debrief-grade grade-${r.grade}">${r.grade}</div>
-    <div class="ofs-debrief-score">${r.score} <span>/ 100</span></div>
-    <div class="ofs-debrief-summary">${r.summary || "Flight complete."}</div>
-    <div class="ofs-debrief-stats">
-      <div><span>Duration</span><b>${Math.round((sim.t))} s</b></div>
-      <div><span>Altitude</span><b>${Math.round(sim.altitude * 3.28084)} ft</b></div>
-      <div><span>Airspeed</span><b>${Math.round(sim.airspeed * 1.94384)} kt</b></div>
-    </div>`;
+
+  // Build the debrief with the DOM API + textContent so data-derived strings
+  // (mission title, grade, score, summary) cannot inject HTML (ZOU-920 #6).
+  const VALID_GRADES = ["S", "A", "B", "C", "D"];
+  const grade = VALID_GRADES.includes(r.grade) ? r.grade : "C";
+
+  const title = document.createElement("div");
+  title.className = "ofs-debrief-title";
+  title.textContent = m.title;
+
+  const gradeEl = document.createElement("div");
+  gradeEl.className = "ofs-debrief-grade grade-" + grade;
+  gradeEl.textContent = grade;
+
+  const scoreEl = document.createElement("div");
+  scoreEl.className = "ofs-debrief-score";
+  const scoreSpan = document.createElement("span");
+  scoreSpan.textContent = "/ 100";
+  scoreEl.append(String(r.score), " ", scoreSpan);
+
+  const summaryEl = document.createElement("div");
+  summaryEl.className = "ofs-debrief-summary";
+  summaryEl.textContent = r.summary || "Flight complete.";
+
+  const stats = document.createElement("div");
+  stats.className = "ofs-debrief-stats";
+  stats.append(
+    statBlock("Duration", Math.round(sim.t) + " s"),
+    statBlock("Altitude", Math.round(sim.altitude * 3.28084) + " ft"),
+    statBlock("Airspeed", Math.round(sim.airspeed * 1.94384) + " kt"),
+  );
+
+  el.replaceChildren(title, gradeEl, scoreEl, summaryEl, stats);
+}
+
+function statBlock(label, value) {
+  const wrap = document.createElement("div");
+  const s = document.createElement("span");
+  s.textContent = label;
+  const b = document.createElement("b");
+  b.textContent = value;
+  wrap.append(s, b);
+  return wrap;
 }
 
 function stepSimulation(dt) {
@@ -137,6 +182,11 @@ function stepSimulation(dt) {
   const env = atmosphere.atmosphere(sim.altitude);
   const controls = input.poll();
   sim.controls = controls;
+  // Publish control display state onto the live sim object (ZOU-920 #9) so
+  // instruments read stable sim fields instead of the replaced controls snapshot.
+  sim.throttle = controls.throttle;
+  sim.gear = controls.gear;
+  sim.flaps = controls.flaps;
 
   if (controls.hudToggle) instruments.setHudVisible(!instruments.isHudVisible());
   if (controls.viewToggle) cycleView();
@@ -205,8 +255,14 @@ function frame(now) {
       steps++;
       if (sim.screen !== "flying") break;
     }
-    if (steps >= MAX_SUBSTEPS && accumulator > FIXED_DT) {
-      accumulator = accumulator % FIXED_DT;
+    // A slow frame cannot explode the integrator (ZOU-920 remediation #2):
+    // the substep budget stays bounded; if there is still unprocessed time
+    // after MAX_SUBSTEPS, drop the excess and record it as debt instead of
+    // modulo-wrapping (which silently discarded sim time and let elapsed
+    // sim time diverge from wall time under load).
+    if (steps >= MAX_SUBSTEPS && accumulator > 0) {
+      sim.debt += accumulator;
+      accumulator = 0;
     }
   }
   sim.substeps = steps;
@@ -281,10 +337,19 @@ function init() {
 function populateBriefing() {
   const af = document.getElementById("briefing-airframe");
   const ms = document.getElementById("briefing-mission");
+  // Build the briefing with the DOM API + textContent (ZOU-920 remediation #6)
+  // so airframe/mission names and summaries cannot inject markup.
   if (af) {
-    af.innerHTML = airframeList().map((a) =>
-      `<button data-airframe="${a.id}" class="${a.id === selectedAirframe ? "sel" : ""}">${a.name}<small>${a.type}</small></button>`
-    ).join("");
+    af.replaceChildren(...airframeList().map((a) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.airframe = a.id;
+      if (a.id === selectedAirframe) btn.classList.add("sel");
+      const small = document.createElement("small");
+      small.textContent = a.type;
+      btn.append(a.name, small);
+      return btn;
+    }));
     af.addEventListener("click", (e) => {
       const b = e.target.closest("[data-airframe]"); if (!b) return;
       selectedAirframe = b.dataset.airframe;
@@ -292,9 +357,16 @@ function populateBriefing() {
     });
   }
   if (ms) {
-    ms.innerHTML = MISSIONS.map((m) =>
-      `<button data-mission="${m.id}" class="${m.id === selectedMissionId ? "sel" : ""}">${m.title}<small>${m.brief}</small></button>`
-    ).join("");
+    ms.replaceChildren(...MISSIONS.map((m) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.mission = m.id;
+      if (m.id === selectedMissionId) btn.classList.add("sel");
+      const small = document.createElement("small");
+      small.textContent = m.brief;
+      btn.append(m.title, small);
+      return btn;
+    }));
     ms.addEventListener("click", (e) => {
       const b = e.target.closest("[data-mission]"); if (!b) return;
       selectedMissionId = b.dataset.mission;
@@ -314,6 +386,7 @@ const OPENFLIGHT = Object.freeze({
       maxFrameTime: MAX_FRAME_TIME,
       accumulator: sim.accumulator,
       substeps: sim.substeps,
+      debt: sim.debt,
       simTime: sim.t,
     });
   },
@@ -326,7 +399,7 @@ const OPENFLIGHT = Object.freeze({
       airspeed: sim.airspeed,
       heading: sim.heading,
       verticalSpeed: sim.verticalSpeed,
-      throttle: sim.controls.throttle,
+      throttle: sim.throttle,
       fuel: sim.fuel,
       rpm: sim.rpm,
       pos: sim.pos.toArray(),
