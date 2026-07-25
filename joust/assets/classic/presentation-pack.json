@@ -1,0 +1,19 @@
+{
+  "id": "joust-zouroboros-classic-original-pack",
+  "mode": "classic",
+  "format": "generated-pixel-geometry",
+  "assetRoot": "./assets/classic",
+  "artDirection": "Low-resolution original bird-rider silhouettes, constrained palette, sparse two-frame wing motion, and flat horizon bands.",
+  "palette": ["#05070c", "#102032", "#26445c", "#7bd0b7", "#f0d36b", "#f6efd0", "#c84d3f", "#6a8bd7"],
+  "sprites": {
+    "player": { "frames": 2, "source": "src/game/presentation/packs.ts", "nativeSize": "32x24" },
+    "enemy": { "frames": 2, "source": "src/game/presentation/packs.ts", "nativeSize": "32x24" },
+    "egg": { "frames": 1, "source": "src/game/presentation/packs.ts", "nativeSize": "14x16" }
+  },
+  "audio": {
+    "style": "original chip-style synthesis",
+    "oscillators": ["square", "triangle"],
+    "source": "src/audio/adaptiveAudio.ts"
+  },
+  "originality": "Authored as new geometric pixel data for Joust by Zouroboros Game Studio. No Williams code, ROM data, sprites, cabinet art, logos, level geometry, or audio are used."
+}

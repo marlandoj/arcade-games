@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Opus 5 Flight Sim — Zouroboros Arcade</title>
+<meta name="description" content="An ultra-realistic browser flight simulator: six-degree-of-freedom aerodynamics, ISA atmosphere, wind and turbulence, three airframes, and a full analog panel." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%9C%88%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Roboto+Condensed:wght@400;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  --ink:#e8edf5;
+  --dim:#8d96a6;
+  --cyan:#22d3ee;
+  --amber:#f5c542;
+  --green:#7ef7c0;
+  --red:#ff5a5a;
+  --panel:rgba(10,13,19,.86);
+  --edge:rgba(255,255,255,.12);
+  --pixel:'Press Start 2P', monospace;
+  --cond:'Roboto Condensed', 'Arial Narrow', Arial, sans-serif;
+  --mono:'Roboto Mono', 'Courier New', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;background:#05070c;color:var(--ink);font-family:var(--cond);}
+canvas{display:block;}
+button{font-family:inherit;color:inherit;cursor:pointer;}
+
+#scene{position:fixed;inset:0;z-index:1;}
+#hud{position:fixed;inset:0;z-index:5;pointer-events:none;}
+#nav{position:fixed;right:14px;bottom:14px;z-index:7;width:190px;height:190px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--edge);backdrop-filter:blur(6px);display:none;}
+#nav.on{display:block;}
+
+/* ── top strip ─────────────────────────────── */
+#top{position:fixed;top:0;left:0;right:0;z-index:8;display:flex;justify-content:space-between;
+  align-items:flex-start;gap:10px;padding:10px 14px;pointer-events:none;}
+.chip{background:var(--panel);border:1px solid var(--edge);border-radius:9px;padding:7px 12px;
+  backdrop-filter:blur(6px);box-shadow:0 6px 22px rgba(0,0,0,.45);}
+.chip .k{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim);}
+.chip .v{font-family:var(--mono);font-size:19px;font-weight:700;line-height:1.15;margin-top:2px;}
+#objective .v{font-size:14px;color:var(--cyan);}
+#scoreChip .v{color:var(--amber);}
+#topRight{display:flex;gap:8px;align-items:flex-start;}
+
+/* ── annunciators ──────────────────────────── */
+#annun{position:fixed;top:78px;left:50%;transform:translateX(-50%);z-index:8;display:flex;
+  gap:7px;flex-wrap:wrap;justify-content:center;pointer-events:none;max-width:92vw;}
+.ann{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.12em;padding:5px 11px;
+  border-radius:6px;border:1px solid currentColor;background:rgba(0,0,0,.55);display:none;}
+.ann.on{display:block;animation:annpulse 1s ease-in-out infinite;}
+.ann.steady.on{animation:none;}
+@keyframes annpulse{50%{opacity:.35;}}
+.ann.warn{color:var(--amber);} .ann.crit{color:var(--red);} .ann.ok{color:var(--green);} .ann.info{color:var(--cyan);}
+
+/* ── message ticker ────────────────────────── */
+#ticker{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9;text-align:center;
+  font-family:var(--pixel);font-size:15px;color:var(--amber);text-shadow:0 3px 22px rgba(0,0,0,.9);
+  opacity:0;transition:opacity .25s;pointer-events:none;letter-spacing:.05em;}
+#ticker.on{opacity:1;}
+
+/* ── instrument panel ──────────────────────── */
+#panelWrap{position:fixed;left:0;right:0;bottom:0;z-index:6;display:none;pointer-events:none;
+  background:linear-gradient(to bottom, rgba(6,8,12,0) 0%, rgba(6,8,12,.75) 24%, #0b0d12 46%);
+  padding-top:36px;}
+#panelWrap.on{display:block;}
+#panelCanvas{display:block;margin:0 auto;aspect-ratio:1180/470;height:min(34vh,300px);width:auto;max-width:96vw;}
+#panelStrip{max-width:1080px;margin:0 auto;display:flex;gap:8px;justify-content:center;flex-wrap:wrap;
+  padding:6px 8px 10px;}
+.sw{font-family:var(--mono);font-size:11px;letter-spacing:.1em;padding:4px 9px;border-radius:5px;
+  border:1px solid rgba(255,255,255,.16);color:var(--dim);background:rgba(255,255,255,.03);}
+.sw b{color:var(--ink);font-weight:700;}
+.sw.hot b{color:var(--amber);}
+
+/* ── touch controls ────────────────────────── */
+#touch{position:fixed;inset:0;z-index:7;display:none;pointer-events:none;}
+#touch.on{display:block;}
+#stick{position:absolute;left:16px;bottom:16px;width:148px;height:148px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.20);background:rgba(10,14,22,.45);pointer-events:auto;
+  touch-action:none;backdrop-filter:blur(4px);}
+#knob{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;
+  background:rgba(34,211,238,.45);border:2px solid rgba(34,211,238,.85);}
+#thr{position:absolute;right:16px;bottom:16px;width:62px;height:190px;border-radius:12px;
+  border:2px solid rgba(255,255,255,.20);background:rgba(10,14,22,.45);pointer-events:auto;
+  touch-action:none;backdrop-filter:blur(4px);}
+#thrKnob{position:absolute;left:4px;right:4px;height:26px;bottom:0;border-radius:8px;
+  background:rgba(245,197,66,.55);border:1px solid rgba(245,197,66,.9);transform:translateY(50%);}
+#thrLabel{position:absolute;left:0;right:0;top:-20px;text-align:center;font-family:var(--mono);
+  font-size:11px;color:var(--dim);letter-spacing:.12em;}
+#tbtns{position:absolute;right:92px;bottom:16px;display:flex;flex-direction:column;gap:8px;pointer-events:auto;}
+.tb{width:62px;height:44px;border-radius:9px;border:1px solid rgba(255,255,255,.22);
+  background:rgba(10,14,22,.55);color:var(--ink);font-family:var(--mono);font-size:12px;
+  font-weight:700;letter-spacing:.06em;backdrop-filter:blur(4px);}
+.tb:active{background:rgba(34,211,238,.35);}
+
+/* ── screens ───────────────────────────────── */
+.screen{position:fixed;inset:0;z-index:20;display:none;flex-direction:column;align-items:center;
+  justify-content:flex-start;overflow-y:auto;overscroll-behavior:contain;
+  background:radial-gradient(ellipse at 50% -10%, rgba(20,40,70,.75), rgba(4,6,11,.97));
+  backdrop-filter:blur(7px);padding:28px 18px 44px;}
+.screen.on{display:flex;}
+.screen::-webkit-scrollbar{width:8px;}
+.screen::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:4px;}
+
+.title{font-family:var(--pixel);font-size:clamp(15px,3.4vw,30px);color:var(--cyan);letter-spacing:.05em;
+  text-align:center;line-height:1.6;text-shadow:0 0 6px rgba(34,211,238,.8),0 0 28px rgba(34,211,238,.35);}
+.sub{margin-top:14px;font-family:var(--mono);font-size:12px;letter-spacing:.24em;color:var(--dim);
+  text-transform:uppercase;text-align:center;}
+.rule{width:min(940px,94vw);height:1px;background:linear-gradient(90deg,transparent,rgba(34,211,238,.5),transparent);margin:22px 0;}
+
+.sect{width:min(940px,94vw);margin-bottom:22px;}
+.sect h2{font-family:var(--pixel);font-size:10px;letter-spacing:.16em;color:var(--green);margin-bottom:12px;}
+.grid{display:grid;gap:10px;}
+.grid.a3{grid-template-columns:repeat(auto-fit,minmax(250px,1fr));}
+.grid.a2{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));}
+
+.card{position:relative;text-align:left;background:rgba(255,255,255,.035);border:1px solid var(--edge);
+  border-radius:11px;padding:14px 15px;transition:border-color .13s,background .13s,transform .13s;}
+.card:hover{border-color:rgba(34,211,238,.55);background:rgba(34,211,238,.07);}
+.card.sel{border-color:var(--cyan);background:rgba(34,211,238,.12);box-shadow:0 0 0 1px rgba(34,211,238,.35),0 10px 30px rgba(0,0,0,.5);}
+.card .cname{font-family:var(--pixel);font-size:11px;letter-spacing:.04em;color:var(--ink);line-height:1.5;}
+.card .cclass{margin-top:7px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--cyan);text-transform:uppercase;}
+.card .cdesc{margin-top:9px;font-size:13.5px;line-height:1.55;color:#b3bcca;}
+.card .cstats{margin-top:11px;display:flex;flex-wrap:wrap;gap:6px;}
+.card .cstats span{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--dim);
+  border:1px solid rgba(255,255,255,.13);border-radius:4px;padding:3px 7px;}
+.card .best{position:absolute;top:12px;right:13px;font-family:var(--mono);font-size:10.5px;color:var(--amber);letter-spacing:.08em;}
+
+.opts{display:flex;flex-wrap:wrap;gap:8px;}
+.opt{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;padding:8px 13px;border-radius:7px;
+  border:1px solid var(--edge);background:rgba(255,255,255,.03);color:var(--dim);text-transform:uppercase;}
+.opt.sel{border-color:var(--amber);color:var(--amber);background:rgba(245,197,66,.12);}
+
+.btn{font-family:var(--pixel);font-size:13px;letter-spacing:.1em;padding:16px 34px;border-radius:10px;
+  border:2px solid var(--cyan);background:rgba(34,211,238,.10);color:var(--cyan);transition:all .13s;}
+.btn:hover{background:var(--cyan);color:#04070c;box-shadow:0 0 26px rgba(34,211,238,.6);}
+.btn.ghost{border-color:rgba(255,255,255,.28);color:var(--dim);background:transparent;font-size:10px;padding:12px 22px;}
+.btn.ghost:hover{border-color:var(--ink);color:var(--ink);background:rgba(255,255,255,.06);box-shadow:none;}
+.btnrow{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:6px;}
+
+.keys{width:min(940px,94vw);display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:6px 18px;}
+.keys div{display:flex;justify-content:space-between;gap:12px;font-family:var(--mono);font-size:11.5px;
+  color:var(--dim);border-bottom:1px dashed rgba(255,255,255,.09);padding:5px 0;}
+.keys div b{color:var(--ink);font-weight:500;white-space:nowrap;}
+
+/* debrief */
+#dbGrade{font-family:var(--pixel);font-size:52px;line-height:1;color:var(--amber);text-shadow:0 0 24px rgba(245,197,66,.55);}
+#dbScore{font-family:var(--mono);font-size:38px;font-weight:700;color:var(--green);}
+.tbl{width:min(680px,94vw);margin-top:14px;}
+.tbl .row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 2px;
+  border-bottom:1px solid rgba(255,255,255,.07);font-family:var(--mono);font-size:12.5px;}
+.tbl .row .l{color:var(--dim);letter-spacing:.06em;}
+.tbl .row .v{color:var(--ink);}
+.tbl .row .p{color:var(--red);min-width:56px;text-align:right;}
+.tbl .row .p.zero{color:var(--green);}
+
+#back{position:fixed;left:12px;top:12px;z-index:30;font-family:var(--pixel);font-size:9px;
+  letter-spacing:.1em;color:var(--dim);text-decoration:none;padding:8px 12px;border:1px solid rgba(255,255,255,.15);
+  border-radius:7px;background:rgba(6,9,14,.7);backdrop-filter:blur(6px);}
+#back:hover{color:var(--cyan);border-color:var(--cyan);}
+.screen #back{display:block;}
+
+#loader{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:#05070c;gap:22px;}
+#loader .bar{width:min(420px,72vw);height:5px;background:rgba(255,255,255,.10);border-radius:3px;overflow:hidden;}
+#loader .bar i{display:block;height:100%;width:100%;transform:scaleX(0);transform-origin:left center;
+  background:linear-gradient(90deg,var(--cyan),var(--green));transition:transform .3s;}
+#loader .msg{font-family:var(--mono);font-size:11.5px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;}
+
+@media (max-width:760px){
+  #panelCanvas{max-width:100%;}
+  #top{padding:8px;}
+  .chip .v{font-size:15px;}
+  #objective{max-width:46vw;}
+  #nav{width:130px;height:130px;right:10px;bottom:224px;}
+}
+@media (prefers-reduced-motion: reduce){
+  .ann.on{animation:none;}
+}
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+<canvas id="hud"></canvas>
+<canvas id="nav" width="380" height="380"></canvas>
+
+<div id="top">
+  <div class="chip" id="objective"><div class="k">Objective</div><div class="v">—</div></div>
+  <div id="topRight">
+    <div class="chip" id="timeChip"><div class="k">Elapsed</div><div class="v">00:00</div></div>
+    <div class="chip" id="scoreChip"><div class="k">Score</div><div class="v">0</div></div>
+  </div>
+</div>
+
+<div id="annun">
+  <div class="ann crit" id="aStall">STALL</div>
+  <div class="ann crit" id="aTerrain">TERRAIN — PULL UP</div>
+  <div class="ann crit" id="aOverspeed">OVERSPEED</div>
+  <div class="ann warn" id="aGear">GEAR UP</div>
+  <div class="ann warn" id="aFuel">LOW FUEL</div>
+  <div class="ann crit" id="aEngine">ENGINE OUT</div>
+  <div class="ann warn steady" id="aBrake">PARK BRAKE</div>
+  <div class="ann info steady" id="aPapi">PAPI ● ● ● ●</div>
+</div>
+
+<div id="ticker"></div>
+
+<div id="panelWrap">
+  <canvas id="panelCanvas" width="1180" height="470"></canvas>
+  <div id="panelStrip">
+    <div class="sw" id="swFlap">FLAPS <b>UP</b></div>
+    <div class="sw" id="swGear">GEAR <b>DOWN</b></div>
+    <div class="sw" id="swTrim">TRIM <b>0.0</b></div>
+    <div class="sw" id="swThr">PWR <b>0%</b></div>
+    <div class="sw" id="swWind">WIND <b>—</b></div>
+    <div class="sw" id="swView">VIEW <b>COCKPIT</b></div>
+  </div>
+</div>
+
+<div id="touch">
+  <div id="stick"><div id="knob"></div></div>
+  <div id="tbtns">
+    <button class="tb" id="tFlapD">FLP▼</button>
+    <button class="tb" id="tFlapU">FLP▲</button>
+    <button class="tb" id="tGear">GEAR</button>
+    <button class="tb" id="tBrake">BRK</button>
+    <button class="tb" id="tView">VIEW</button>
+  </div>
+  <div id="thr"><div id="thrLabel">THR</div><div id="thrKnob"></div></div>
+</div>
+
+<a id="back" href="../index.html">← ARCADE</a>
+
+<!-- ── Loader ── -->
+<div id="loader">
+  <div class="title">OPUS 5<br>FLIGHT SIM</div>
+  <div class="bar"><i id="loadBar"></i></div>
+  <div class="msg" id="loadMsg">Building terrain…</div>
+</div>
+
+<!-- ── Main menu ── -->
+<section class="screen" id="menu">
+  <div class="title">OPUS 5 FLIGHT SIM</div>
+  <div class="sub">Six degrees of freedom · ISA atmosphere · real stability derivatives</div>
+  <div class="rule"></div>
+
+  <div class="sect">
+    <h2>// AIRCRAFT</h2>
+    <div class="grid a3" id="acList"></div>
+  </div>
+
+  <div class="sect">
+    <h2>// MISSION</h2>
+    <div class="grid a2" id="msList"></div>
+  </div>
+
+  <div class="sect">
+    <h2>// CONDITIONS</h2>
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <div class="k" style="font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--dim);margin-bottom:6px;">TIME OF DAY</div>
+        <div class="opts" id="timeOpts"></div>
+      </div>
+      <div>
+        <div class="k" style="font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--dim);margin-bottom:6px;">WEATHER</div>
+        <div class="opts" id="wxOpts"></div>
+      </div>
+      <div>
+        <div class="k" style="font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--dim);margin-bottom:6px;">REALISM</div>
+        <div class="opts" id="diffOpts"></div>
+      </div>
+      <div>
+        <div class="k" style="font-family:var(--mono);font-size:10px;letter-spacing:.18em;color:var(--dim);margin-bottom:6px;">CONTROLS</div>
+        <div class="opts" id="ctrlOpts"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="btnrow">
+    <button class="btn" id="startBtn">▶ START ENGINES</button>
+    <button class="btn ghost" id="keysBtn">CONTROLS</button>
+  </div>
+
+  <div class="sect" id="keysBlock" style="display:none;margin-top:24px;">
+    <h2>// CONTROLS</h2>
+    <div class="keys" id="keyList"></div>
+  </div>
+
+  <div class="sub" style="margin-top:28px;font-size:10px;letter-spacing:.14em;">
+    ZOUROBOROS ARCADE · BUILT WITH CLAUDE CODE + OPUS 5
+  </div>
+</section>
+
+<!-- ── Pause ── -->
+<section class="screen" id="pause" style="justify-content:center;">
+  <div class="title">PAUSED</div>
+  <div class="rule"></div>
+  <div class="tbl" id="pauseStats"></div>
+  <div class="btnrow" style="margin-top:26px;">
+    <button class="btn" id="resumeBtn">▶ RESUME</button>
+    <button class="btn ghost" id="restartBtn">RESTART</button>
+    <button class="btn ghost" id="endBtn">END FLIGHT</button>
+    <button class="btn ghost" id="menuBtn">MAIN MENU</button>
+  </div>
+  <div class="sect" style="margin-top:30px;">
+    <h2>// CONTROLS</h2>
+    <div class="keys" id="keyList2"></div>
+  </div>
+</section>
+
+<!-- ── Debrief ── -->
+<section class="screen" id="debrief" style="justify-content:center;">
+  <div class="title" id="dbTitle">DEBRIEF</div>
+  <div class="sub" id="dbVerdict">—</div>
+  <div style="display:flex;gap:34px;align-items:center;margin:26px 0 6px;flex-wrap:wrap;justify-content:center;">
+    <div style="text-align:center;">
+      <div id="dbGrade">—</div>
+      <div class="sub" style="margin-top:8px;font-size:9px;">LANDING GRADE</div>
+    </div>
+    <div style="text-align:center;">
+      <div id="dbScore">0</div>
+      <div class="sub" style="margin-top:8px;font-size:9px;" id="dbScoreLabel">SCORE</div>
+    </div>
+    <div style="text-align:center;">
+      <div id="dbBest" style="font-family:var(--mono);font-size:38px;font-weight:700;color:var(--amber);">0</div>
+      <div class="sub" style="margin-top:8px;font-size:9px;">PERSONAL BEST</div>
+    </div>
+  </div>
+  <div class="tbl" id="dbTable"></div>
+  <div class="btnrow" style="margin-top:26px;">
+    <button class="btn" id="againBtn">▶ FLY AGAIN</button>
+    <button class="btn ghost" id="db2Menu">MAIN MENU</button>
+  </div>
+</section>
+
+<script type="importmap">
+{ "imports": { "three": "https://esm.sh/three@0.160.0" } }
+</script>
+<script type="module" src="./src/main.js"></script>
+<script>
+window.addEventListener('error', (e) => {
+  const l = document.getElementById('loadMsg');
+  if (l && document.getElementById('loader').style.display !== 'none') {
+    l.textContent = 'LOAD ERROR: ' + (e.message || 'unknown');
+    l.style.color = '#ff5a5a';
+  }
+});
+</script>
+</body>
+</html>

@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ZOUROBOROS ARCADE</title>
+<link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
@@ -200,6 +201,38 @@ main {
   margin-bottom: 24px;
   border: 1px solid oklch(88% 0.18 195 / 0.2);
   image-rendering: pixelated;
+}
+
+.featured-cabinet.small-cabinet {
+  display: grid;
+  grid-template-columns: minmax(128px, 190px) 1fr;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 20px;
+}
+
+.small-cabinet .cabinet-thumb {
+  aspect-ratio: 1;
+  max-height: none;
+  margin: 0;
+  object-fit: cover;
+  border-color: oklch(88% 0.18 195 / 0.35);
+  box-shadow: 0 0 18px oklch(88% 0.18 195 / 0.12);
+}
+
+.small-cabinet .cabinet-name {
+  font-size: clamp(0.78rem, 1.8vw, 1rem);
+}
+
+.small-cabinet .cabinet-tagline {
+  margin-bottom: 18px;
+}
+
+@media (max-width: 680px) {
+  .featured-cabinet.small-cabinet {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Featured cabinet (hero slot) ────────── */
@@ -427,6 +460,21 @@ footer {
   "version": 1,
   "games": [
     {
+      "id": "serpent-shore-rally",
+      "title": "SERPENT SHORE RALLY",
+      "subtitle": "Tidebreaker Coast Kart Racing",
+      "description": "Drift across sunlit sand, cave ramps, and a half-submerged shortcut. Outrace five rivals over three laps with tactical items and boost-charged corners.",
+      "path": "./serpent-shore-rally/index.html",
+      "thumbnail": "./thumbnails/serpent-shore-rally.png",
+      "icon": "🏁",
+      "accent": "#ffd34e",
+      "tags": ["racing", "kart", "arcade", "single-player"],
+      "controls": ["← → / A D — steer", "↑ / W — accelerate", "Shift — drift", "Space — use item", "P — pause"],
+      "status": "live",
+      "featured": true,
+      "added": "2026-07-15"
+    },
+    {
       "id": "cow-abductor",
       "title": "COW ABDUCTORS",
       "subtitle": "3D UFO FARM HEIST",
@@ -438,7 +486,7 @@ footer {
       "tags": ["3D", "ACTION", "ARCADE", "1P"],
       "controls": ["WASD / ARROWS — FLY", "SPACE — TRACTOR BEAM", "SHIFT — BOOST"],
       "status": "live",
-      "featured": true,
+      "featured": false,
       "added": "2026-07-02"
     }
   ]
@@ -530,14 +578,16 @@ footer {
   function buildSmallCabinet(g) {
     const el = document.createElement('a');
     el.href = g.path;
-    el.className = 'featured-cabinet';
-    el.style.marginBottom = '16px';
+    el.className = 'featured-cabinet small-cabinet';
     el.innerHTML = `
-      <div class="cabinet-name" style="font-size:0.9rem">${g.icon || '🎮'}&nbsp;&nbsp;${g.title}</div>
-      <div class="cabinet-tagline">${g.subtitle || ''}</div>
-      <div class="cabinet-footer">
-        <span class="play-label">▶ PLAY</span>
-        <div class="tags-row">${(g.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      ${g.thumbnail ? `<img class="cabinet-thumb" src="${g.thumbnail}" alt="${g.title} thumbnail" loading="lazy">` : ''}
+      <div>
+        <div class="cabinet-name">${g.icon || '🎮'}&nbsp;&nbsp;${g.title}</div>
+        <div class="cabinet-tagline">${g.subtitle || ''}</div>
+        <div class="cabinet-footer">
+          <span class="play-label">▶ PLAY</span>
+          <div class="tags-row">${(g.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        </div>
       </div>
     `;
     return el;

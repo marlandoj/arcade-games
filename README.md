@@ -8,11 +8,13 @@ A registry-driven HTML5 arcade hub. Add a game by dropping a directory and one e
 
 | ID | Title | Features |
 |----|-------|----------|
-| `kintspark-fracture-run` | **KINTSPARK: Fracture Run** — Repair the Maze | Six authored levels, four readable enemy policies, accessibility assists, keyboard/touch/gamepad, offline play |
+| `opus5-flight-sim` | **Opus 5 Flight Sim** — Six Degrees of Freedom | 6-DOF rigid-body aerodynamics, ISA atmosphere, wind/gust/turbulence, 3 airframes, analog six-pack + HUD, live PAPI, 5 missions, graded landings |
+| `serpent-shore-rally` | **Serpent Shore Rally** — Tidebreaker Coast Kart Racing | Pseudo-3D beach racing, 5 rivals, drift boosts, item boxes, ramps, shortcut, mobile controls |
 | `cow-abductor` | **Cow Abductors** — 3D UFO Farm Heist | 3D Three.js, tractor beam, combos, minimap, power-ups, mobile joystick |
+| `joust` | **Joust** — Skybound Rivalry | Deterministic flight combat, tiered rivals, hazards, eggs, endless waves, keyboard/gamepad/touch input |
 | `void-blaster` | **Void Blaster** — Space Invaders | Waves, bunkers, mystery ship, combo×4, power-ups, mobile controls |
 | `asteroid-drift` | **Asteroid Drift** — Vector Space | Splitting rocks, UFOs, hyperspace, shield bar, particles, mobile joystick |
-| `neon-snake` | **Neon Snake** — Glow Trails | 5 food types, ghost mode, portal walls, speed ramp×5, swipe controls |
+| `neon-snake` | **Neon Snake** — Circuit Surge | Smooth motion, buffered turns, Focus slow-time, rescue shields, 5 food types, timed combos, touch controls |
 
 ## Layout
 
@@ -22,15 +24,15 @@ arcade-games/
 ├── registry.json           # Catalog source of truth
 ├── thumbnails/             # Game thumbnail images (PNG)
 ├── <game-id>/
-│   ├── index.html          # Game entry point
-│   └── assets/             # Optional relative static assets
+│   ├── index.html          # Self-contained single-file game, or a shell that
+│   └── src/*.js            #   loads ES modules (opus5-flight-sim does this)
 └── scripts/
     └── validate-registry.ts
 ```
 
 ## Add a game
 
-1. Create `<game-id>/index.html` as a self-contained game or a relative static bundle with local assets.
+1. Create `<game-id>/index.html` — either a self-contained game or a production bundle whose assets use relative paths.
 2. Add an entry to `registry.json`:
    ```json
    {

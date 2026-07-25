@@ -1,0 +1,32 @@
+{
+  "id": "joust-zouroboros-modern-original-pack",
+  "mode": "modern",
+  "format": "generated-pixel-geometry",
+  "assetRoot": "./assets/modern",
+  "artDirection": "Higher-detail original pixel silhouettes with layered sky treatment, glow accents, additional wing frames, particles, and richer synthesized audio.",
+  "palette": [
+    "#070c14",
+    "#0f2434",
+    "#163c4d",
+    "#2f6f6b",
+    "#58c7ad",
+    "#a6f3d8",
+    "#ffe38a",
+    "#f7b25a",
+    "#e45b4f",
+    "#8aa8ff",
+    "#f8f3dc",
+    "#ffffff"
+  ],
+  "sprites": {
+    "player": { "frames": 4, "source": "src/game/presentation/packs.ts", "nativeSize": "58x44" },
+    "enemy": { "frames": 4, "source": "src/game/presentation/packs.ts", "nativeSize": "58x44" },
+    "egg": { "frames": 3, "source": "src/game/presentation/packs.ts", "nativeSize": "24x30" }
+  },
+  "audio": {
+    "style": "original layered arcade synthesis",
+    "oscillators": ["triangle", "sine"],
+    "source": "src/audio/adaptiveAudio.ts"
+  },
+  "originality": "Authored as new geometric pixel data for Joust by Zouroboros Game Studio. No Williams code, ROM data, sprites, cabinet art, logos, level geometry, or audio are used."
+}

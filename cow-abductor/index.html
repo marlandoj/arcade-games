@@ -84,6 +84,36 @@
     background:var(--panel);border:1px solid rgba(255,255,255,.14);color:var(--ink);border-radius:10px;padding:6px 10px;font-size:16px;}
   .credit{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-size:11px;opacity:.4;z-index:31;}
 
+  /* Leaderboard */
+  #lb-panel{width:100%;max-width:500px;margin:14px 0 6px;}
+  .lb-header{font-size:16px;font-weight:900;margin-bottom:3px;text-align:center;}
+  .lb-sub{font-size:11px;opacity:.5;letter-spacing:.1em;text-align:center;margin-bottom:10px;}
+  .lb-row{display:flex;align-items:center;gap:9px;padding:6px 10px;border-radius:11px;background:rgba(255,255,255,.05);margin-bottom:4px;border:1px solid rgba(255,255,255,.07);transition:.12s;}
+  .lb-row.me{background:rgba(255,179,71,.12);border-color:rgba(255,179,71,.3);}
+  .lb-rank{width:24px;font-size:14px;text-align:center;flex-shrink:0;}
+  .lb-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+  .lb-name{flex:1;font-size:13px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .lb-diff{font-size:10px;opacity:.45;letter-spacing:.08em;text-transform:uppercase;flex-shrink:0;}
+  .lb-rating{font-size:13px;font-weight:800;color:var(--accent2);flex-shrink:0;}
+  .lb-empty{text-align:center;opacity:.4;font-size:12px;padding:14px 0;}
+
+  /* Name entry */
+  #nameEntry{display:flex;gap:8px;margin:8px 0 4px;width:100%;max-width:460px;}
+  #playerName{flex:1;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.18);border-radius:10px;padding:9px 13px;color:#fff;font-size:15px;font-family:inherit;outline:none;}
+  #playerName:focus{border-color:var(--accent);}
+  #submitScore{pointer-events:auto;cursor:pointer;border:none;border-radius:10px;padding:9px 16px;font-size:14px;font-weight:800;color:#1a1008;background:linear-gradient(180deg,var(--accent2),var(--accent));white-space:nowrap;}
+  #submitScore:disabled{opacity:.38;cursor:default;}
+  #submitResult{font-size:12px;opacity:.7;margin-bottom:3px;min-height:16px;}
+
+  /* CTA buttons */
+  .cta-row{display:flex;gap:9px;margin-top:10px;justify-content:center;flex-wrap:wrap;}
+  .cta-btn{pointer-events:auto;cursor:pointer;display:inline-flex;align-items:center;gap:6px;border-radius:12px;padding:9px 16px;font-size:13px;font-weight:700;text-decoration:none;transition:.12s;border:1.5px solid transparent;}
+  .cta-btn.github{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.18);color:#fff;}
+  .cta-btn.github:hover{background:rgba(255,255,255,.17);}
+  .cta-btn.x-btn{background:#000;border-color:rgba(255,255,255,.18);color:#fff;}
+  .cta-btn.x-btn:hover{background:#1a1a1a;}
+  .cta-star-count{background:rgba(255,255,255,.14);border-radius:6px;padding:1px 6px;font-size:11px;}
+
   /* Mobile controls */
   #touch{position:fixed;inset:0;z-index:20;display:none;pointer-events:none;}
   #touch.on{display:block;}
@@ -147,6 +177,15 @@
     <div><span class="k">P / Esc</span>Pause</div>
   </div>
   <div class="best" id="startBest"></div>
+  <div style="width:100%;max-width:500px;margin-top:14px;">
+    <div class="lb-header">🌎 Global Leaderboard</div>
+    <div class="lb-sub">pilot rating — % of top score</div>
+    <div id="lb-start-inner"><div class="lb-empty">Loading…</div></div>
+    <div class="cta-row">
+      <a class="cta-btn github" id="ghBtnStart" href="https://github.com/marlandoj/zouroboros" target="_blank" rel="noopener">⭐ Star on GitHub <span class="cta-star-count" id="ghStarsStart">…</span></a>
+      <a class="cta-btn x-btn" href="https://x.com/xmarlandoj" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.258 5.622 5.907-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> Follow @xmarlandoj</a>
+    </div>
+  </div>
 </div>
 
 <!-- Pause screen -->
@@ -163,6 +202,20 @@
   <div class="tag" id="overSub"></div>
   <div class="stats-grid" id="overStats"></div>
   <div class="best" id="overBest"></div>
+  <div id="nameEntry">
+    <input type="text" id="playerName" maxlength="20" placeholder="Enter your name to submit…" autocomplete="off" spellcheck="false" />
+    <button id="submitScore">Submit</button>
+  </div>
+  <div id="submitResult"></div>
+  <div id="lb-panel">
+    <div class="lb-header">🌎 Global Leaderboard</div>
+    <div class="lb-sub">pilot rating — % of top score</div>
+    <div id="lb-over-inner"><div class="lb-empty">Loading…</div></div>
+  </div>
+  <div class="cta-row" style="margin-bottom:6px;">
+    <a class="cta-btn github" href="https://github.com/marlandoj/zouroboros" target="_blank" rel="noopener">⭐ Star on GitHub <span class="cta-star-count" id="ghStarsOver">…</span></a>
+    <a class="cta-btn x-btn" href="https://x.com/xmarlandoj" target="_blank" rel="noopener"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.258 5.622 5.907-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> Follow @xmarlandoj</a>
+  </div>
   <button class="btn" id="againBtn">FLY AGAIN 🛸</button>
   <button class="btn ghost" id="menuBtn">MAIN MENU</button>
 </div>
@@ -593,6 +646,16 @@ function gameOver(reason){
     `<div class="s"><div class="n">${game.cowsGrabbed}</div><div class="t">Cows Abducted</div></div>`;
   $('#overBest').textContent = (game.score>=game.best?'🏆 NEW BEST! ':'Best: ')+game.best+' pts';
   $('#overScreen').classList.remove('hidden');
+  // leaderboard / submit setup
+  _pendingScore = {score:game.score, cows:game.cowsGrabbed, diff:diffKey};
+  _submitted = false;
+  const btn=document.getElementById('submitScore');
+  if(btn){ btn.disabled=false; }
+  const res=document.getElementById('submitResult');
+  if(res) res.textContent='';
+  const nameEl=document.getElementById('playerName');
+  if(nameEl) nameEl.value=localStorage.getItem('cowabd_name')||'';
+  fetchLB(document.getElementById('lb-over-inner'));
 }
 
 /* ---------- UI helpers ---------- */
@@ -882,6 +945,81 @@ addEventListener('resize',()=>{ camera.aspect=innerWidth/innerHeight; camera.upd
 
 // expose for debugging
 window.__cow={game,cows,farmers,ufo,startGame};
+
+/* ============================================================ *
+ *  LEADERBOARD
+ * ============================================================ */
+const LB_API = 'https://marlandoj.zo.space/api/cow-abductors/leaderboard';
+const AVATAR_COLORS = ['#3da5ff','#ff7a18','#46e36b','#ff4d4d','#9b6bff','#ffd86b','#ff5fb0','#66c6ff'];
+const MEDALS = ['🥇','🥈','🥉'];
+
+function avatarColor(name){ let h=0; for(const c of name) h=(h*31+c.charCodeAt(0))&0xffff; return AVATAR_COLORS[h%AVATAR_COLORS.length]; }
+
+function renderLB(scores, container, myScore=null){
+  if(!scores||!scores.length){ container.innerHTML='<div class="lb-empty">No scores yet — be first!</div>'; return; }
+  const max=scores[0]?.score||1;
+  container.innerHTML=scores.map((s,i)=>{
+    const rating=Math.round((s.score/max)*100);
+    const rank=i<3?MEDALS[i]:String(i+1);
+    const initials=s.name.slice(0,2).toUpperCase();
+    const color=avatarColor(s.name);
+    const isMe=myScore!==null&&i===scores.findIndex(x=>x.score===s.score&&x.name===s.name)&&s.score===myScore;
+    return `<div class="lb-row${isMe?' me':''}">
+      <span class="lb-rank">${rank}</span>
+      <span class="lb-avatar" style="background:${color}">${initials}</span>
+      <span class="lb-name">${s.name.replace(/</g,'&lt;')}${isMe?' <span style="opacity:.55;font-weight:500">(you)</span>':''}</span>
+      <span class="lb-diff">${s.diff}</span>
+      <span class="lb-rating">${rating}%</span>
+    </div>`;
+  }).join('');
+}
+
+async function fetchLB(container, myScore=null){
+  try{
+    const r=await fetch(LB_API,{cache:'no-store'});
+    const {scores}=await r.json();
+    renderLB(scores||[], container, myScore);
+  } catch { container.innerHTML='<div class="lb-empty">Leaderboard unavailable</div>'; }
+}
+
+async function fetchGHStars(){
+  try{
+    const r=await fetch('https://api.github.com/repos/marlandoj/zouroboros');
+    const {stargazers_count}=await r.json();
+    document.querySelectorAll('.cta-star-count').forEach(el=>el.textContent=stargazers_count);
+  } catch {}
+}
+
+// Init on page load
+fetchLB(document.getElementById('lb-start-inner'));
+fetchGHStars();
+
+// Score submission state
+let _pendingScore=null, _submitted=false;
+
+document.getElementById('submitScore').addEventListener('click', async ()=>{
+  const nameEl=document.getElementById('playerName');
+  const name=nameEl.value.trim();
+  if(!name){ nameEl.focus(); return; }
+  if(_submitted||!_pendingScore) return;
+  _submitted=true;
+  const btn=document.getElementById('submitScore');
+  const res=document.getElementById('submitResult');
+  btn.disabled=true; res.textContent='Submitting…';
+  try{
+    const r=await fetch(LB_API,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,score:_pendingScore.score,cows:_pendingScore.cows,diff:_pendingScore.diff})});
+    const {rank}=await r.json();
+    res.textContent=`🏆 Rank #${rank} on the global board!`;
+    localStorage.setItem('cowabd_name', name);
+    fetchLB(document.getElementById('lb-over-inner'), _pendingScore.score);
+    fetchLB(document.getElementById('lb-start-inner'));
+    fetchGHStars();
+  } catch {
+    res.textContent='Could not submit — check your connection.';
+    btn.disabled=false; _submitted=false;
+  }
+});
 </script>
 </body>
 <!-- ZOU-449 back-link overlay — non-invasive, zero game-logic changes -->
