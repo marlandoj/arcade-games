@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Joust app icon">
+  <rect width="512" height="512" fill="#08111f"/>
+  <path d="M60 345h220v52H60z" fill="#9ff0d6"/>
+  <path d="M144 286h92v36H144z" fill="#6fd2bb"/>
+  <path d="M214 132h78v132h-78z" fill="#ffe38a"/>
+  <path d="M292 242h148v18H292z" fill="#f5f0dc"/>
+  <path d="M92 397h176v36H92z" fill="#f5f0dc"/>
+  <path d="M310 298h96v24h-96z" fill="#ef7664"/>
+  <path d="M330 322h52v18h-52z" fill="#ffc9b6"/>
+</svg>

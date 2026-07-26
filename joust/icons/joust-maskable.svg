@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Joust maskable app icon">
+  <rect width="512" height="512" fill="#08111f"/>
+  <circle cx="256" cy="256" r="220" fill="#10243a"/>
+  <path d="M82 345h220v52H82z" fill="#9ff0d6"/>
+  <path d="M166 286h92v36h-92z" fill="#6fd2bb"/>
+  <path d="M236 132h78v132h-78z" fill="#ffe38a"/>
+  <path d="M314 242h130v18H314z" fill="#f5f0dc"/>
+  <path d="M114 397h176v36H114z" fill="#f5f0dc"/>
+  <path d="M330 298h96v24h-96z" fill="#ef7664"/>
+  <path d="M350 322h52v18h-52z" fill="#ffc9b6"/>
+</svg>

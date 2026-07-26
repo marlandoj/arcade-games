@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>NEON SNAKE — Phosphor Arcade</title>
+<link rel="icon" href="data:," />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
@@ -85,6 +86,7 @@ html, body {
 #game-wrap {
   position: relative;
   display: flex; flex-direction: column; align-items: center;
+  width: min(94vw, 620px);
 }
 
 /* =============================================
@@ -92,7 +94,7 @@ html, body {
    ============================================= */
 #hud {
   width: 100%;
-  display: flex; justify-content: space-between; align-items: center;
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: stretch;
   padding: 8px 4px 6px;
   gap: 4px;
 }
@@ -100,8 +102,8 @@ html, body {
   display: flex; flex-direction: column; align-items: center;
   background: var(--panel);
   border: 1px solid rgba(0,255,65,0.2);
-  border-radius: 4px; padding: 4px 10px;
-  min-width: 72px;
+  border-radius: 4px; padding: 5px 4px;
+  min-width: 0;
 }
 .hud-label { font-size: 6px; letter-spacing: 2px; opacity: 0.6; margin-bottom: 4px; }
 .hud-val   { font-size: 12px; line-height: 1; }
@@ -111,6 +113,7 @@ html, body {
 #hud-level   .hud-val { color: var(--yellow);  text-shadow: 0 0 6px #ffe600; }
 #hud-best    .hud-val { color: var(--green);   text-shadow: var(--glow-g); opacity: 0.7; }
 #hud-speed   .hud-val { color: var(--cyan);    text-shadow: var(--glow-c); font-size: 9px; }
+#hud-shield  .hud-val { color: var(--yellow);  text-shadow: 0 0 6px #ffe600; font-size: 11px; }
 
 #hud-multi.bump { animation: multibump 0.5s ease-out; }
 @keyframes multibump {
@@ -124,9 +127,34 @@ html, body {
    ============================================= */
 #gameCanvas {
   display: block;
-  image-rendering: pixelated;
+  width: 100%; height: auto;
+  image-rendering: auto;
+  border-radius: 6px;
   border: 1px solid rgba(0,255,65,0.4);
-  box-shadow: 0 0 18px #00ff4133, 0 0 4px #00ff4166, inset 0 0 12px rgba(0,0,0,0.8);
+  box-shadow: 0 0 26px #00ff412b, 0 0 4px #00ff4166, inset 0 0 22px rgba(0,0,0,0.9);
+}
+
+#status-rail {
+  width: 100%;
+  display: grid; grid-template-columns: 1fr 1fr auto;
+  align-items: center; gap: 12px;
+  padding: 8px 6px 0;
+}
+.meter-group { min-width: 0; }
+.meter-label {
+  display: flex; justify-content: space-between; gap: 8px;
+  margin-bottom: 4px; font-size: 6px; letter-spacing: 1px; color: rgba(220,255,230,0.72);
+}
+.meter-track {
+  height: 5px; overflow: hidden; border-radius: 2px;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+}
+.meter-fill { display: block; height: 100%; width: 100%; transform-origin: left; transition: transform 0.12s linear; }
+#focus-fill { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+#combo-fill { background: var(--magenta); box-shadow: 0 0 8px var(--magenta); }
+#objective {
+  max-width: 180px; color: var(--yellow); font-size: 7px; line-height: 1.5;
+  text-align: right; text-shadow: 0 0 6px rgba(255,230,0,0.55);
 }
 
 /* =============================================
@@ -135,7 +163,7 @@ html, body {
 #touch-controls {
   display: none;
   justify-content: center; align-items: center;
-  gap: 6px; margin-top: 10px;
+  gap: 18px; margin-top: 8px;
   padding: 4px;
 }
 #touch-controls.visible { display: flex; }
@@ -159,6 +187,13 @@ html, body {
 .dpad-left  { grid-area: l; }
 .dpad-right { grid-area: r; }
 .dpad-down  { grid-area: d; }
+.focus-btn {
+  width: 78px; height: 78px; border-radius: 50%;
+  border: 1px solid rgba(0,238,255,0.45); background: rgba(0,238,255,0.1);
+  color: var(--cyan); font-family: 'Press Start 2P', monospace; font-size: 8px; line-height: 1.5;
+  box-shadow: inset 0 0 16px rgba(0,238,255,0.08); touch-action: none;
+}
+.focus-btn.pressed { background: rgba(0,238,255,0.3); box-shadow: var(--glow-c); }
 
 /* =============================================
    SCREENS (title / pause / game-over)
@@ -251,6 +286,12 @@ html, body {
 }
 
 .best-line { font-size: 8px; color: var(--cyan); text-shadow: var(--glow-c); margin-top: 6px; }
+.pickup-legend {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 14px;
+  max-width: 520px; margin-top: 12px; font-size: 6px; color: rgba(220,255,230,0.72);
+}
+.pickup-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.pickup-dot { display: block; width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 7px currentColor; background: currentColor; }
 
 /* Stats grid (game over) */
 .stats-grid {
@@ -289,12 +330,42 @@ html, body {
   opacity: 0; transition: opacity 0.4s;
 }
 #ghost-tint.active { opacity: 1; }
+#focus-tint {
+  position: fixed; inset: 0; pointer-events: none; z-index: 88;
+  opacity: 0; transition: opacity 0.18s ease-out;
+  box-shadow: inset 0 0 110px rgba(0,238,255,0.2);
+}
+#focus-tint.active { opacity: 1; }
 
 /* Multiplier flash on game-wrap */
 #game-wrap.multi-flash { animation: multiflash 0.4s; }
 @keyframes multiflash {
   0%,100% { box-shadow: none; }
   50%      { box-shadow: 0 0 40px var(--magenta), 0 0 80px rgba(255,0,229,0.3); }
+}
+
+@media (max-width: 680px) {
+  #game-wrap { width: min(96vw, 560px); }
+  #hud { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  #hud-best, #hud-speed, #hud-level { display: none; }
+  .hud-label { letter-spacing: 1px; }
+  #status-rail { grid-template-columns: 1fr 1fr; gap: 8px; }
+  #objective { grid-column: 1 / -1; max-width: none; text-align: center; }
+  .screen { padding: 18px 16px; overflow-y: auto; }
+  .dpad { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(3, 46px); }
+  .focus-btn { width: 68px; height: 68px; }
+  .pickup-legend { max-width: 340px; }
+}
+
+@media (max-height: 720px) and (pointer: coarse) {
+  #hud { padding-top: 4px; }
+  #touch-controls { margin-top: 2px; }
+  .dpad { grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 40px); }
+  .focus-btn { width: 60px; height: 60px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
 </style>
 </head>
@@ -310,6 +381,7 @@ html, body {
 <div id="crt-overlay"></div>
 <div id="vignette"></div>
 <div id="ghost-tint"></div>
+<div id="focus-tint"></div>
 
 <!-- Toast -->
 <div id="toast"></div>
@@ -342,6 +414,10 @@ html, body {
         <div class="hud-label">SPEED</div>
         <div class="hud-val" id="val-speed">TIER 1</div>
       </div>
+      <div class="hud-cell" id="hud-shield">
+        <div class="hud-label">SHIELD</div>
+        <div class="hud-val" id="val-shield">◆◆</div>
+      </div>
       <div class="hud-cell" id="hud-best">
         <div class="hud-label">BEST</div>
         <div class="hud-val" id="val-best">0</div>
@@ -351,6 +427,18 @@ html, body {
     <!-- Canvas -->
     <canvas id="gameCanvas"></canvas>
 
+    <div id="status-rail" aria-live="polite">
+      <div class="meter-group">
+        <div class="meter-label"><span>FOCUS</span><span id="focus-label">READY</span></div>
+        <div class="meter-track"><span class="meter-fill" id="focus-fill"></span></div>
+      </div>
+      <div class="meter-group">
+        <div class="meter-label"><span>COMBO</span><span id="combo-label">×1</span></div>
+        <div class="meter-track"><span class="meter-fill" id="combo-fill"></span></div>
+      </div>
+      <div id="objective">NEXT LEVEL · 0 / 8</div>
+    </div>
+
     <!-- Mobile D-Pad -->
     <div id="touch-controls">
       <div class="dpad">
@@ -359,6 +447,7 @@ html, body {
         <button class="dpad-btn dpad-right" data-dir="RIGHT">▶</button>
         <button class="dpad-btn dpad-down"  data-dir="DOWN">▼</button>
       </div>
+      <button class="focus-btn" id="focusBtn" aria-label="Hold to activate Focus mode">HOLD<br>FOCUS</button>
     </div>
 
   </div>
@@ -369,17 +458,17 @@ html, body {
      ============================================= -->
 <div class="screen" id="titleScreen">
   <div class="screen-logo">NEON<br>SNAKE</div>
-  <div class="screen-sub">PHOSPHOR GLOW EDITION</div>
+  <div class="screen-sub">CIRCUIT SURGE EDITION</div>
 
   <div class="diff-row" id="diffPick">
     <button class="diff-btn" data-d="easy">
-      EASY<br><small>20×20 · slow · portals</small>
+      EASY<br><small>20×20 · 3 shields · portals</small>
     </button>
     <button class="diff-btn sel" data-d="normal">
-      NORMAL<br><small>25×25 · medium · portals</small>
+      NORMAL<br><small>25×25 · 2 shields · portals</small>
     </button>
     <button class="diff-btn" data-d="hard">
-      HARD<br><small>30×30 · fast · walls</small>
+      HARD<br><small>30×30 · 1 shield · walls</small>
     </button>
   </div>
 
@@ -389,7 +478,15 @@ html, body {
     <div><span class="help-key">↑↓←→</span>Move</div>
     <div><span class="help-key">WASD</span>Move</div>
     <div><span class="help-key">P / ESC</span>Pause</div>
-    <div><span class="help-key">M</span>Mute</div>
+    <div><span class="help-key">SPACE</span>Focus</div>
+  </div>
+
+  <div class="pickup-legend" aria-label="Pickup guide">
+    <span style="color:#00ff41"><i class="pickup-dot"></i>DATA + SCORE</span>
+    <span style="color:#ff00e5"><i class="pickup-dot"></i>SURGE + COMBO</span>
+    <span style="color:#00eeff"><i class="pickup-dot"></i>GHOST</span>
+    <span style="color:#ffe600"><i class="pickup-dot"></i>SHIELD</span>
+    <span style="color:#ff2244"><i class="pickup-dot"></i>VIRUS</span>
   </div>
 
   <div class="best-line" id="title-best"></div>
@@ -401,6 +498,7 @@ html, body {
 <div class="screen hidden" id="pauseScreen">
   <div class="screen-logo" style="font-size:clamp(18px,4vw,28px)">PAUSED</div>
   <div class="screen-sub">THE SNAKE WAITS</div>
+  <div class="best-line">HOLD SPACE TO BEND TIME · SHIELDS AUTO-RESCUE COLLISIONS</div>
   <button class="btn-primary" id="resumeBtn">▶ RESUME</button>
   <button class="btn-ghost"   id="quitBtn">QUIT TO MENU</button>
 </div>
@@ -440,9 +538,9 @@ const randOf = arr => arr[Math.floor(Math.random()*arr.length)];
  *  DIFFICULTY CONFIG
  * ============================================================ */
 const DIFF = {
-  easy:   { cols:20, rows:20, baseTick:160, portals:true,  label:'EASY'   },
-  normal: { cols:25, rows:25, baseTick:130, portals:true,  label:'NORMAL' },
-  hard:   { cols:30, rows:30, baseTick:100, portals:false, label:'HARD'   },
+  easy:   { cols:20, rows:20, baseTick:172, portals:true,  shields:3, label:'EASY'   },
+  normal: { cols:25, rows:25, baseTick:138, portals:true,  shields:2, label:'NORMAL' },
+  hard:   { cols:30, rows:30, baseTick:108, portals:false, shields:1, label:'HARD'   },
 };
 let diffKey = 'normal';
 let diff = DIFF[diffKey];
@@ -453,7 +551,7 @@ let diff = DIFF[diffKey];
 const canvas = $('#gameCanvas');
 const ctx    = canvas.getContext('2d');
 
-const CELL   = 20;    // px per grid cell
+const CELL   = 24;    // internal render pixels per grid cell
 let COLS = diff.cols;
 let ROWS = diff.rows;
 
@@ -461,8 +559,7 @@ function resizeCanvas() {
   COLS = diff.cols; ROWS = diff.rows;
   canvas.width  = COLS * CELL;
   canvas.height = ROWS * CELL;
-  // Scale HUD to match canvas width
-  $('#hud').style.width = canvas.width + 'px';
+  $('#hud').style.width = '100%';
 }
 resizeCanvas();
 
@@ -525,6 +622,10 @@ const Sound = (() => {
       [330,440,550,660,770].forEach((f,i) => tone(f, 0.12, 'triangle', 0.28, null, i*0.06));
     },
     ghostOn()     { tone(880, 0.4, 'sine', 0.22, 440); },
+    shield()      {
+      [220,440,880].forEach((f,i) => tone(f, 0.18, 'triangle', 0.24, f*1.25, i*0.05));
+    },
+    focusOn()     { tone(360, 0.18, 'sine', 0.12, 220); },
     die()         {
       tone(440, 0.12, 'sawtooth', 0.35, 220);
       setTimeout(() => { tone(330, 0.15, 'sawtooth', 0.35, 165); }, 130);
@@ -538,7 +639,7 @@ const Sound = (() => {
  *  PARTICLES (canvas-based, pooled)
  * ============================================================ */
 const particles = [];
-const PMAX = 200;
+const PMAX = 320;
 for (let i = 0; i < PMAX; i++) {
   particles.push({ active:false, x:0,y:0,vx:0,vy:0, life:0,maxLife:1, r:255,g:255,b:255, size:2 });
 }
@@ -574,6 +675,30 @@ function updateParticles(dt) {
   ctx.globalAlpha = 1; ctx.shadowBlur = 0;
 }
 
+const shockwaves = [];
+function spawnShockwave(x, y, color, maxRadius=CELL*2.4) {
+  shockwaves.push({ x, y, color, life:0.55, maxLife:0.55, maxRadius });
+}
+
+function drawShockwaves(dt) {
+  for (let i = shockwaves.length - 1; i >= 0; i--) {
+    const wave = shockwaves[i];
+    wave.life -= dt;
+    if (wave.life <= 0) { shockwaves.splice(i, 1); continue; }
+    const progress = 1 - wave.life / wave.maxLife;
+    ctx.globalAlpha = (1 - progress) * 0.8;
+    ctx.strokeStyle = wave.color;
+    ctx.lineWidth = 3 * (1 - progress) + 0.5;
+    ctx.shadowColor = wave.color;
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(wave.x, wave.y, 4 + wave.maxRadius * progress, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+}
+
 /* ============================================================
  *  FOOD TYPES
  * ============================================================ */
@@ -581,6 +706,7 @@ const FOOD_NORMAL = 'normal';   // green glow — 10×multi pts
 const FOOD_POWER  = 'power';    // magenta pulse — 25×multi pts, brief ghost
 const FOOD_POISON = 'poison';   // red pulse — shrink by 3
 const FOOD_GHOST  = 'ghost';    // cyan — 10 sec ghost mode
+const FOOD_SHIELD = 'shield';   // yellow — restores one collision rescue
 
 /* ============================================================
  *  GAME STATE
@@ -588,8 +714,10 @@ const FOOD_GHOST  = 'ghost';    // cyan — 10 sec ghost mode
 const G = {
   state: 'menu',   // menu | play | pause | over
   snake: [],       // [{x,y}, …] head = [0]
+  prevSnake: [],
   dir:   {x:1,y:0},
   nextDir:{x:1,y:0},
+  turnQueue: [],
   food: [],        // [{x,y,type,timer,phase}]
   score: 0,
   multiplier: 1,   // 1–5
@@ -598,6 +726,18 @@ const G = {
   level: 1,
   speedTier: 1,
   ghostTimer: 0,   // seconds remaining
+  shields: 2,
+  focus: 1,
+  focusHeld: false,
+  focusActive: false,
+  comboTimer: 0,
+  comboWindow: 5.5,
+  streak: 0,
+  bestCombo: 1,
+  rescues: 0,
+  deathReason: 'self',
+  trail: [],
+  shake: 0,
   highScore: +(localStorage.getItem('neonsnake_hs') || 0),
   startTime: 0,
   turnsTaken: 0,
@@ -639,6 +779,7 @@ function randomFreeCell() {
 const POWER_FOOD_LIFE  = 7;    // sec
 const POISON_FOOD_LIFE = 9;    // sec
 const GHOST_FOOD_LIFE  = 10;   // sec
+const SHIELD_FOOD_LIFE = 11;   // sec
 
 function spawnFood(type) {
   const pos = randomFreeCell();
@@ -646,6 +787,7 @@ function spawnFood(type) {
   if (type === FOOD_POWER)  life = POWER_FOOD_LIFE  + Math.random()*3;
   if (type === FOOD_POISON) life = POISON_FOOD_LIFE + Math.random()*4;
   if (type === FOOD_GHOST)  life = GHOST_FOOD_LIFE  + Math.random()*3;
+  if (type === FOOD_SHIELD) life = SHIELD_FOOD_LIFE + Math.random()*4;
   G.food.push({ x:pos.x, y:pos.y, type, life, maxLife:life, phase:Math.random()*Math.PI*2 });
 }
 
@@ -658,6 +800,7 @@ function maybeSpawnSpecialFood(elapsed) {
   const power  = G.food.filter(f=>f.type===FOOD_POWER).length;
   const poison = G.food.filter(f=>f.type===FOOD_POISON).length;
   const ghost  = G.food.filter(f=>f.type===FOOD_GHOST).length;
+  const shield = G.food.filter(f=>f.type===FOOD_SHIELD).length;
 
   // power food every ~15s after 5s
   if (power < 1 && elapsed > 5 && Math.random() < 0.012) spawnFood(FOOD_POWER);
@@ -665,12 +808,57 @@ function maybeSpawnSpecialFood(elapsed) {
   if (poison < 2 && elapsed > 10 && Math.random() < 0.008) spawnFood(FOOD_POISON);
   // ghost power-up
   if (ghost < 1 && elapsed > 20 && Math.random() < 0.004) spawnFood(FOOD_GHOST);
+  // rescue core appears when shields are low, so recovery is earned rather than random mercy
+  if (shield < 1 && G.shields < diff.shields && elapsed > 12 && Math.random() < 0.007) spawnFood(FOOD_SHIELD);
 }
 
 /* ============================================================
  *  MOVE + COLLISION
  * ============================================================ */
+function wrappedCell(x, y) {
+  if (diff.portals) return { x:((x % COLS) + COLS) % COLS, y:((y % ROWS) + ROWS) % ROWS };
+  return {x, y};
+}
+
+function cellWouldCollide(x, y, ignoreSelf=false) {
+  if (!diff.portals && (x < 0 || x >= COLS || y < 0 || y >= ROWS)) return true;
+  const p = wrappedCell(x, y);
+  if (ignoreSelf || G.ghostTimer > 0) return false;
+  return G.snake.slice(0, -1).some(s => s.x === p.x && s.y === p.y);
+}
+
+function rescueSnake() {
+  if (G.shields <= 0) return false;
+
+  const head = G.snake[0];
+  const candidates = [
+    {x:-G.dir.y, y:G.dir.x},
+    {x:G.dir.y, y:-G.dir.x},
+    {x:-G.dir.x, y:-G.dir.y},
+  ];
+  const escape = candidates.find(d => !cellWouldCollide(head.x+d.x, head.y+d.y, true));
+  if (!escape) return false;
+
+  G.shields--;
+  G.rescues++;
+  G.ghostTimer = Math.max(G.ghostTimer, 2.8);
+  G.dir = {...escape};
+  G.nextDir = {...escape};
+  G.turnQueue.length = 0;
+  G.shake = 0.75;
+  const cc = cellCenter(head.x, head.y);
+  spawnParticles(cc.x, cc.y, 32, YELLOW, 7, 0.9, 4);
+  spawnShockwave(cc.x, cc.y, '#ffe600', CELL*4);
+  Sound.shield();
+  $('#ghost-tint').classList.add('active');
+  toast('PHASE SHIELD · AUTO-TURN', '#ffe600', 1100);
+  updateHUD();
+  return true;
+}
+
 function tickSnake() {
+  G.prevSnake = G.snake.map(s => ({...s}));
+  if (G.turnQueue.length) G.nextDir = G.turnQueue.shift();
   G.dir = { ...G.nextDir };
 
   let nx = G.snake[0].x + G.dir.x;
@@ -682,18 +870,24 @@ function tickSnake() {
     ny = ((ny % ROWS) + ROWS) % ROWS;
   } else {
     if (nx < 0 || nx >= COLS || ny < 0 || ny >= ROWS) {
-      killSnake(); return;
+      if (!rescueSnake()) killSnake('wall');
+      return;
     }
   }
 
   // Self collision (ghost mode bypasses)
   if (!G.ghostTimer) {
     const selfHit = G.snake.slice(0, -1).some(s => s.x===nx && s.y===ny);
-    if (selfHit) { killSnake(); return; }
+    if (selfHit) {
+      if (!rescueSnake()) killSnake('self');
+      return;
+    }
   }
 
   // Add new head
   G.snake.unshift({ x:nx, y:ny });
+  G.trail.unshift({x:nx, y:ny, life:1});
+  if (G.trail.length > 34) G.trail.pop();
 
   // Check food
   let grow = false;
@@ -716,13 +910,16 @@ function tickSnake() {
 
 function processFood(f, nx, ny) {
   const cc = cellCenter(nx, ny);
+  let comboHit = false;
 
   if (f.type === FOOD_NORMAL) {
     const pts = 10 * G.multiplier;
     G.score += pts;
     G.foodEaten++;
+    comboHit = true;
     Sound.eat();
     spawnParticles(cc.x, cc.y, 10, [0,255,65], 3.5, 0.55, 3);
+    spawnShockwave(cc.x, cc.y, '#00ff41');
     showPop(cc.x - canvas.getBoundingClientRect().left + canvas.offsetLeft, cc.y - canvas.getBoundingClientRect().top + canvas.offsetTop, '+'+pts, '#00ff41');
     // Grow snake (just don't pop tail, already done above)
 
@@ -730,8 +927,10 @@ function processFood(f, nx, ny) {
     const pts = 25 * G.multiplier;
     G.score += pts;
     G.foodEaten++;
+    comboHit = true;
     Sound.eatPower();
     spawnParticles(cc.x, cc.y, 18, [255,0,229], 5, 0.7, 4);
+    spawnShockwave(cc.x, cc.y, '#ff00e5', CELL*3.2);
     showPop(cc.x - canvas.getBoundingClientRect().left + canvas.offsetLeft, cc.y - canvas.getBoundingClientRect().top + canvas.offsetTop, '+'+pts+'!', '#ff00e5');
     toast('+'+pts+' POWER!', '#ff00e5', 900);
 
@@ -742,33 +941,55 @@ function processFood(f, nx, ny) {
     const shrink = Math.min(3, G.snake.length - 2);
     for (let s = 0; s < shrink; s++) G.snake.pop();
     G.length = G.snake.length;
+    G.streak = 0;
+    G.comboTimer = 0;
+    G.multiplier = 1;
+    G.focus = Math.max(0, G.focus - 0.18);
     toast('POISON! -3 SEGMENTS', '#ff2244', 1100);
     // No score, no eaten count
     return; // skip multiplier check
 
   } else if (f.type === FOOD_GHOST) {
     G.ghostTimer = 10;
+    G.score += 15 * G.multiplier;
+    G.foodEaten++;
+    comboHit = true;
     Sound.ghostOn();
     spawnParticles(cc.x, cc.y, 16, [0,238,255], 4, 0.7, 3.5);
+    spawnShockwave(cc.x, cc.y, '#00eeff', CELL*3.5);
     toast('GHOST MODE! 10 SEC', '#00eeff', 1000);
     $('#ghost-tint').classList.add('active');
-    return;
+
+  } else if (f.type === FOOD_SHIELD) {
+    const maxShields = diff.shields + 1;
+    G.shields = Math.min(maxShields, G.shields + 1);
+    G.score += 20 * G.multiplier;
+    G.foodEaten++;
+    comboHit = true;
+    Sound.shield();
+    spawnParticles(cc.x, cc.y, 24, YELLOW, 5.5, 0.85, 4);
+    spawnShockwave(cc.x, cc.y, '#ffe600', CELL*3.8);
+    toast('PHASE SHIELD RESTORED', '#ffe600', 1000);
   }
 
-  // Multiplier check (every 5 normal/power food)
-  checkMultiplier();
+  if (comboHit) {
+    G.streak++;
+    G.comboTimer = G.comboWindow;
+    G.focus = Math.min(1, G.focus + 0.12);
+    checkMultiplier();
+  }
 
-  // Speed ramp (every 5 food eaten)
-  const tier = Math.min(5, 1 + Math.floor(G.foodEaten / 5));
+  // Speed ramps remain readable: Focus can bend each tier without removing challenge.
+  const tier = Math.min(5, 1 + Math.floor(G.foodEaten / 6));
   if (tier !== G.speedTier) {
     G.speedTier = tier;
-    tickMs = diff.baseTick - (tier - 1) * 12;
+    tickMs = diff.baseTick - (tier - 1) * 10;
     Sound.levelUp();
     toast('SPEED UP! TIER '+tier, '#ffe600', 900);
   }
 
-  // Level: every 10 food
-  const lv = 1 + Math.floor(G.foodEaten / 10);
+  // Level: every 8 pickups
+  const lv = 1 + Math.floor(G.foodEaten / 8);
   if (lv !== G.level) {
     G.level = lv;
     toast('LEVEL ' + lv + '!', '#00eeff', 900);
@@ -776,9 +997,10 @@ function processFood(f, nx, ny) {
 }
 
 function checkMultiplier() {
-  const newMulti = Math.min(5, 1 + Math.floor(G.foodEaten / 5));
+  const newMulti = Math.min(5, 1 + Math.floor(G.streak / 4));
   if (newMulti > G.multiplier) {
     G.multiplier = newMulti;
+    G.bestCombo = Math.max(G.bestCombo, newMulti);
     Sound.multiUp();
     // Flash HUD cell
     const cell = $('#hud-multi');
@@ -791,11 +1013,18 @@ function checkMultiplier() {
     void wrap.offsetWidth;
     wrap.classList.add('multi-flash');
     toast('MULTIPLIER ×'+G.multiplier+'!', '#ff00e5', 1000);
+  } else {
+    G.multiplier = newMulti;
   }
 }
 
-function killSnake() {
+function killSnake(reason='self') {
+  if (G.state === 'over') return;
   G.state = 'over';
+  G.focusHeld = false;
+  G.focusActive = false;
+  G.deathReason = reason;
+  $('#focus-tint').classList.remove('active');
   Sound.die();
 
   // death explosion
@@ -822,7 +1051,21 @@ function updateHUD() {
   $('#val-length').textContent = G.length;
   $('#val-level').textContent  = G.level;
   $('#val-speed').textContent  = 'TIER ' + G.speedTier;
+  $('#val-shield').textContent = G.shields ? '◆'.repeat(G.shields) : 'EMPTY';
   $('#val-best').textContent   = G.highScore;
+  updateStatusRail();
+}
+
+function updateStatusRail() {
+  $('#focus-fill').style.transform = `scaleX(${clamp(G.focus, 0, 1)})`;
+  $('#focus-label').textContent = G.focusActive ? 'ACTIVE' : G.focus >= 0.98 ? 'READY' : Math.round(G.focus*100)+'%';
+  const comboPct = G.multiplier > 1 ? clamp(G.comboTimer / G.comboWindow, 0, 1) : 0;
+  $('#combo-fill').style.transform = `scaleX(${comboPct})`;
+  $('#combo-label').textContent = G.multiplier > 1 ? `×${G.multiplier} · ${G.streak}` : `${G.streak} CHAIN`;
+  const levelProgress = G.foodEaten % 8;
+  $('#objective').textContent = levelProgress === 0 && G.foodEaten > 0
+    ? `LEVEL ${G.level} · CIRCUIT STABLE`
+    : `NEXT LEVEL · ${levelProgress} / 8`;
 }
 
 /* ============================================================
@@ -834,32 +1077,91 @@ const MAGENTA = [255,0,229];
 const RED     = [255,34,68];
 const YELLOW  = [255,230,0];
 
-function drawGrid() {
-  ctx.fillStyle = '#000';
+const stars = Array.from({length:90}, () => ({
+  x:Math.random(), y:Math.random(), size:0.4+Math.random()*1.5,
+  speed:0.15+Math.random()*0.55, phase:Math.random()*Math.PI*2,
+}));
+
+function drawGrid(now) {
+  const bg = ctx.createRadialGradient(canvas.width*0.5, canvas.height*0.45, 0, canvas.width*0.5, canvas.height*0.45, canvas.width*0.75);
+  bg.addColorStop(0, '#02120d');
+  bg.addColorStop(0.58, '#000805');
+  bg.addColorStop(1, '#000201');
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // subtle grid dots
-  ctx.fillStyle = 'rgba(0,255,65,0.06)';
-  for (let c = 0; c < COLS; c++) {
-    for (let r = 0; r < ROWS; r++) {
-      ctx.fillRect(c*CELL + CELL/2 - 0.5, r*CELL + CELL/2 - 0.5, 1, 1);
-    }
+  for (const star of stars) {
+    const pulse = 0.35 + Math.sin(now*0.001*star.speed + star.phase)*0.2;
+    ctx.globalAlpha = pulse;
+    ctx.fillStyle = star.speed > 0.45 ? '#00eeff' : '#00ff41';
+    ctx.fillRect(star.x*canvas.width, star.y*canvas.height, star.size, star.size);
   }
+  ctx.globalAlpha = 1;
+
+  // circuit grid with a slow scanning current
+  ctx.strokeStyle = 'rgba(0,255,65,0.045)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let c = 0; c < COLS; c++) {
+    ctx.moveTo(c*CELL+0.5, 0); ctx.lineTo(c*CELL+0.5, canvas.height);
+  }
+  for (let r = 0; r < ROWS; r++) {
+    ctx.moveTo(0, r*CELL+0.5); ctx.lineTo(canvas.width, r*CELL+0.5);
+  }
+  ctx.stroke();
+
+  const scanY = (now*0.035) % canvas.height;
+  const scan = ctx.createLinearGradient(0, scanY-30, 0, scanY+30);
+  scan.addColorStop(0, 'rgba(0,238,255,0)');
+  scan.addColorStop(0.5, 'rgba(0,238,255,0.055)');
+  scan.addColorStop(1, 'rgba(0,238,255,0)');
+  ctx.fillStyle = scan;
+  ctx.fillRect(0, scanY-30, canvas.width, 60);
 }
 
-function drawSnake() {
+function interpolatedSegment(seg, prev, alpha) {
+  if (!prev) return {...seg};
+  let dx = seg.x - prev.x;
+  let dy = seg.y - prev.y;
+  if (diff.portals) {
+    if (Math.abs(dx) > 1) dx += dx > 0 ? -COLS : COLS;
+    if (Math.abs(dy) > 1) dy += dy > 0 ? -ROWS : ROWS;
+  }
+  return {
+    x:((prev.x + dx*alpha) % COLS + COLS) % COLS,
+    y:((prev.y + dy*alpha) % ROWS + ROWS) % ROWS,
+  };
+}
+
+function drawTrail() {
+  for (let i = G.trail.length - 1; i >= 0; i--) {
+    const p = G.trail[i];
+    const strength = (1 - i/G.trail.length) * 0.18;
+    const cc = cellCenter(p.x, p.y);
+    ctx.globalAlpha = strength;
+    ctx.fillStyle = G.ghostTimer > 0 ? '#00eeff' : '#00ff41';
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.arc(cc.x, cc.y, CELL*0.24, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+}
+
+function drawSnake(alpha) {
   const len = G.snake.length;
   const isGhost = G.ghostTimer > 0;
 
   for (let i = len-1; i >= 0; i--) {
-    const seg = G.snake[i];
+    const seg = interpolatedSegment(G.snake[i], G.prevSnake[i], alpha);
     const t = i / len;  // 0=head, 1=tail
     const bright = 1 - t * 0.7;
 
-    const x = seg.x * CELL + 1;
-    const y = seg.y * CELL + 1;
-    const w = CELL - 2;
-    const h = CELL - 2;
+    const cx = seg.x * CELL + CELL/2;
+    const cy = seg.y * CELL + CELL/2;
+    const radius = CELL * (i === 0 ? 0.46 : 0.39 - t*0.08);
 
     if (isGhost) {
       // Translucent cyan in ghost mode
@@ -878,23 +1180,29 @@ function drawSnake() {
         : `rgb(0,${g},${Math.round(40 * bright)})`;
     }
 
-    ctx.fillRect(x, y, w, h);
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI*2);
+    ctx.fill();
+
+    ctx.globalAlpha *= 0.55;
+    ctx.fillStyle = isGhost ? '#d9fbff' : '#d8ffe2';
+    ctx.beginPath();
+    ctx.arc(cx - radius*0.2, cy - radius*0.22, Math.max(1.2, radius*0.24), 0, Math.PI*2);
+    ctx.fill();
 
     // Head: draw eyes
     if (i === 0) {
       ctx.shadowBlur = 0; ctx.globalAlpha = 1;
-      ctx.fillStyle = '#000';
+      ctx.fillStyle = '#001a0a';
       // Eye positions depend on direction
       const d = G.dir;
-      const cx = seg.x * CELL + CELL/2;
-      const cy = seg.y * CELL + CELL/2;
-      const eyeOff = 3;
+      const eyeOff = CELL*0.16;
       const eyes = d.x !== 0
-        ? [{x:cx + d.x*4, y:cy-eyeOff}, {x:cx + d.x*4, y:cy+eyeOff}]
-        : [{x:cx-eyeOff, y:cy + d.y*4}, {x:cx+eyeOff,  y:cy + d.y*4}];
+        ? [{x:cx + d.x*CELL*0.2, y:cy-eyeOff}, {x:cx + d.x*CELL*0.2, y:cy+eyeOff}]
+        : [{x:cx-eyeOff, y:cy + d.y*CELL*0.2}, {x:cx+eyeOff,  y:cy + d.y*CELL*0.2}];
       for (const e of eyes) {
         ctx.beginPath();
-        ctx.arc(e.x, e.y, 1.5, 0, Math.PI*2);
+        ctx.arc(e.x, e.y, 2, 0, Math.PI*2);
         ctx.fill();
       }
     }
@@ -964,6 +1272,26 @@ function drawFood(now) {
       ctx.lineTo(cc.x, cc.y + r);
       ctx.lineTo(cc.x - r, cc.y);
       ctx.closePath(); ctx.fill();
+
+    } else if (f.type === FOOD_SHIELD) {
+      ctx.shadowColor = `rgba(255,230,0,${pulse})`;
+      ctx.shadowBlur = 20 * pulse;
+      ctx.fillStyle = `rgba(255,230,0,${0.58 + 0.35*pulse})`;
+      const r = CELL/2 - 3 + pulse*2;
+      ctx.beginPath();
+      for (let j=0; j<6; j++) {
+        const angle = -Math.PI/2 + j*Math.PI/3;
+        const px = cc.x + Math.cos(angle)*r;
+        const py = cc.y + Math.sin(angle)*r;
+        j === 0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
+      }
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#2a2600';
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.arc(cc.x, cc.y, r*0.34, 0, Math.PI*2);
+      ctx.fill();
     }
 
     ctx.shadowBlur = 0;
@@ -1002,13 +1330,18 @@ function drawGhostTimer() {
 
 function drawPortalIndicators() {
   if (!diff.portals) return;
-  // Small arrows on edges suggesting portal
-  ctx.fillStyle = 'rgba(0,238,255,0.4)';
-  ctx.shadowColor = '#00eeff'; ctx.shadowBlur = 4;
-  // Top/bottom
-  for (let c = 2; c < COLS-2; c += 4) {
-    const x = c * CELL + CELL/2;
-    ctx.fillText('⟳', x-5, 10);
+  const pulse = 0.2 + Math.sin(performance.now()*0.003)*0.12;
+  ctx.fillStyle = `rgba(0,238,255,${pulse})`;
+  ctx.shadowColor = '#00eeff'; ctx.shadowBlur = 8;
+  for (let c = 2; c < COLS-2; c += 5) {
+    const x = c * CELL + CELL/2 - 5;
+    ctx.fillRect(x, 0, 10, 2);
+    ctx.fillRect(x, canvas.height-2, 10, 2);
+  }
+  for (let r = 2; r < ROWS-2; r += 5) {
+    const y = r * CELL + CELL/2 - 5;
+    ctx.fillRect(0, y, 2, 10);
+    ctx.fillRect(canvas.width-2, y, 2, 10);
   }
   ctx.shadowBlur = 0;
 }
@@ -1021,40 +1354,73 @@ function gameLoop(now) {
   const dt = Math.min((now - lastFrame) / 1000, 0.1);
   lastFrame = now;
 
-  // Tick the snake on a fixed interval
   if (G.state === 'play') {
-    if (now - lastTick >= tickMs) {
+    const wasFocusing = G.focusActive;
+    G.focusActive = G.focusHeld && G.focus > 0.015;
+    $('#focus-tint').classList.toggle('active', G.focusActive);
+    if (G.focusActive) {
+      G.focus = Math.max(0, G.focus - dt*0.24);
+      if (!wasFocusing) Sound.focusOn();
+      if (G.focus <= 0.015) {
+        G.focusHeld = false;
+        G.focusActive = false;
+        toast('FOCUS DEPLETED', '#00eeff', 650);
+      }
+    } else {
+      G.focus = Math.min(1, G.focus + dt*0.085);
+    }
+
+    if (G.comboTimer > 0) {
+      G.comboTimer = Math.max(0, G.comboTimer - dt);
+      if (G.comboTimer === 0 && G.multiplier > 1) {
+        G.multiplier = 1;
+        G.streak = 0;
+        toast('COMBO COOLED', '#ff00e5', 600);
+        updateHUD();
+      }
+    }
+
+    if (G.ghostTimer > 0) {
+      G.ghostTimer = Math.max(0, G.ghostTimer - dt);
+      if (G.ghostTimer === 0) {
+        $('#ghost-tint').classList.remove('active');
+        toast('PHASE MODE ENDED', '#00eeff', 700);
+      }
+    }
+
+    G.shake = Math.max(0, G.shake - dt*2.4);
+    const stepMs = tickMs * (G.focusActive ? 1.52 : 1);
+    if (now - lastTick >= stepMs) {
       lastTick = now;
       tickSnake();
-      // Age timed food
       const elapsed = (now - G.startTime) / 1000;
       for (let i = G.food.length-1; i >= 0; i--) {
         const f = G.food[i];
         if (f.life !== null) {
-          f.life -= tickMs / 1000;
+          f.life -= stepMs / 1000;
           if (f.life <= 0) G.food.splice(i, 1);
         }
       }
       maybeSpawnSpecialFood(elapsed);
-      // Ghost timer
-      if (G.ghostTimer > 0) {
-        G.ghostTimer -= tickMs / 1000;
-        if (G.ghostTimer <= 0) {
-          G.ghostTimer = 0;
-          $('#ghost-tint').classList.remove('active');
-          toast('GHOST MODE ENDED', '#00eeff', 700);
-        }
-      }
     }
+    updateStatusRail();
   }
 
-  // Render
-  drawGrid();
+  const activeStepMs = tickMs * (G.focusActive ? 1.52 : 1);
+  const alpha = G.state === 'play' ? clamp((now-lastTick)/activeStepMs, 0, 1) : 1;
+  const shakePx = G.shake > 0 ? G.shake*5 : 0;
+  ctx.save();
+  if (shakePx) ctx.translate((Math.random()-0.5)*shakePx, (Math.random()-0.5)*shakePx);
+  drawGrid(now);
   drawWalls();
+  drawPortalIndicators();
+  drawTrail();
   drawFood(now);
-  if (G.state === 'play' || G.state === 'pause') drawSnake();
+  if (G.state === 'play' || G.state === 'pause') drawSnake(alpha);
   updateParticles(dt);
+  drawShockwaves(dt);
   drawGhostTimer();
+  ctx.restore();
 }
 
 /* ============================================================
@@ -1070,10 +1436,12 @@ const DIR_VECTORS = {
 function trySetDir(dirName) {
   const d = DIR_VECTORS[dirName];
   if (!d) return;
-  // Prevent reversing
-  if (d.x !== 0 && G.dir.x !== 0) return;
-  if (d.y !== 0 && G.dir.y !== 0) return;
-  G.nextDir = d;
+  const reference = G.turnQueue.length ? G.turnQueue[G.turnQueue.length-1] : G.dir;
+  // Buffer up to two legal corners; this makes quick turns reliable without allowing reversals.
+  if (d.x !== 0 && reference.x !== 0) return;
+  if (d.y !== 0 && reference.y !== 0) return;
+  if (G.turnQueue.length >= 2) return;
+  G.turnQueue.push({...d});
   G.turnsTaken++;
 }
 
@@ -1094,10 +1462,15 @@ document.addEventListener('keydown', e => {
       case 'ArrowLeft':  case 'a': case 'A': e.preventDefault(); trySetDir('LEFT');  break;
       case 'ArrowRight': case 'd': case 'D': e.preventDefault(); trySetDir('RIGHT'); break;
       case 'p': case 'P': case 'Escape': pauseGame(); break;
+      case ' ': e.preventDefault(); G.focusHeld = true; break;
     }
   } else if (G.state === 'pause') {
     if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') resumeGame();
   }
+});
+
+document.addEventListener('keyup', e => {
+  if (e.key === ' ') G.focusHeld = false;
 });
 
 /* Touch: swipe detection */
@@ -1123,6 +1496,14 @@ document.querySelectorAll('.dpad-btn').forEach(btn => {
   btn.addEventListener('touchend',   e => { e.preventDefault(); btn.classList.remove('pressed'); }, { passive: false });
   btn.addEventListener('mousedown',  e => { trySetDir(dir); });
 });
+
+const focusBtn = $('#focusBtn');
+const setTouchFocus = active => {
+  G.focusHeld = active;
+  focusBtn.classList.toggle('pressed', active);
+};
+focusBtn.addEventListener('pointerdown', e => { e.preventDefault(); setTouchFocus(true); });
+['pointerup','pointercancel','pointerleave'].forEach(type => focusBtn.addEventListener(type, () => setTouchFocus(false)));
 
 /* Detect touch device */
 function isTouchDevice() { return ('ontouchstart' in window) || navigator.maxTouchPoints > 0; }
@@ -1161,6 +1542,7 @@ function initGame() {
   G.state      = 'play';
   G.dir        = {x:1, y:0};
   G.nextDir    = {x:1, y:0};
+  G.turnQueue  = [];
   G.food       = [];
   G.score      = 0;
   G.multiplier = 1;
@@ -1168,6 +1550,17 @@ function initGame() {
   G.level      = 1;
   G.speedTier  = 1;
   G.ghostTimer = 0;
+  G.shields    = diff.shields;
+  G.focus      = 1;
+  G.focusHeld  = false;
+  G.focusActive = false;
+  G.comboTimer = 0;
+  G.streak     = 0;
+  G.bestCombo  = 1;
+  G.rescues    = 0;
+  G.deathReason = 'self';
+  G.trail      = [];
+  G.shake      = 0;
   G.startTime  = performance.now();
   G.turnsTaken = 0;
   G.turnsValid = 0;
@@ -1180,6 +1573,7 @@ function initGame() {
     {x: startX+1, y: startY},
     {x: startX,   y: startY},
   ];
+  G.prevSnake = G.snake.map(s => ({...s}));
   G.length = G.snake.length;
 
   // Spawn food
@@ -1188,9 +1582,11 @@ function initGame() {
 
   // Clear particles
   particles.forEach(p => p.active = false);
+  shockwaves.length = 0;
 
   // Clear ghost tint
   $('#ghost-tint').classList.remove('active');
+  $('#focus-tint').classList.remove('active');
 
   // Stop & restart loop
   if (animId) cancelAnimationFrame(animId);
@@ -1213,6 +1609,9 @@ function startGame() {
 function pauseGame() {
   if (G.state !== 'play') return;
   G.state = 'pause';
+  G.focusHeld = false;
+  G.focusActive = false;
+  $('#focus-tint').classList.remove('active');
   $('#pauseScreen').classList.remove('hidden');
 }
 
@@ -1225,6 +1624,9 @@ function resumeGame() {
 
 function toMenu() {
   G.state = 'menu';
+  G.focusHeld = false;
+  G.focusActive = false;
+  $('#focus-tint').classList.remove('active');
   if (animId) cancelAnimationFrame(animId);
   animId = requestAnimationFrame(gameLoop); // keep loop for bg
   $('#pauseScreen').classList.add('hidden');
@@ -1243,14 +1645,17 @@ function showOverScreen() {
   const isNewBest = G.score >= G.highScore && G.score > 0;
 
   $('#overTitle').textContent = isNewBest ? 'NEW BEST!' : 'GAME OVER';
-  $('#overSub').textContent = G.ghostTimer > 0 ? 'THE GHOST FADED' :
-    diff.portals ? 'THE SNAKE BIT ITSELF' : 'THE SNAKE HIT THE WALL';
+  $('#overSub').textContent = G.deathReason === 'wall'
+    ? 'THE SNAKE HIT THE FIREWALL'
+    : 'THE CIRCUIT CROSSED ITSELF';
 
   $('#overStats').innerHTML =
     `<div class="stat-box"><div class="stat-n">${G.score}</div><div class="stat-t">SCORE</div></div>` +
     `<div class="stat-box"><div class="stat-n">${G.length}</div><div class="stat-t">LENGTH</div></div>` +
     `<div class="stat-box"><div class="stat-n">${mm}:${ss}</div><div class="stat-t">TIME</div></div>` +
-    `<div class="stat-box"><div class="stat-n">×${G.multiplier}</div><div class="stat-t">PEAK MULTI</div></div>`;
+    `<div class="stat-box"><div class="stat-n">×${G.bestCombo}</div><div class="stat-t">PEAK MULTI</div></div>` +
+    `<div class="stat-box"><div class="stat-n">${G.rescues}</div><div class="stat-t">RESCUES</div></div>` +
+    `<div class="stat-box"><div class="stat-n">${G.level}</div><div class="stat-t">LEVEL</div></div>`;
 
   $('#overBest').textContent = isNewBest ? '★ NEW HIGH SCORE ★' : 'BEST: ' + G.highScore;
   $('#overBest').style.color = isNewBest ? '#ffe600' : '#00eeff';
@@ -1330,8 +1735,7 @@ $('#val-best').textContent   = G.highScore;
  *  WINDOW RESIZE
  * ============================================================ */
 window.addEventListener('resize', () => {
-  // Canvas size is fixed to grid, just update HUD width
-  $('#hud').style.width = canvas.width + 'px';
+  $('#hud').style.width = '100%';
 });
 </script>
 </body>

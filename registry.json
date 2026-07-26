@@ -1,7 +1,37 @@
 {
   "version": 1,
-  "updated": "2026-07-21",
+  "updated": "2026-07-25",
   "games": [
+    {
+      "id": "opus5-flight-sim",
+      "title": "OPUS 5 FLIGHT SIM",
+      "subtitle": "Six Degrees of Freedom — Zouroboros Field",
+      "description": "A study-level flight simulator in the browser. Rigid-body aerodynamics with published stability derivatives, ISA atmosphere, wind, gusts and turbulence, a live PAPI and a full analog six-pack. Three airframes, five missions, and a landing graded to the foot per minute.",
+      "path": "./opus5-flight-sim/index.html",
+      "thumbnail": "./thumbnails/opus5-flight-sim.png",
+      "icon": "✈️",
+      "accent": "#22d3ee",
+      "tags": [
+        "simulation",
+        "3d",
+        "flight",
+        "physics",
+        "single-player"
+      ],
+      "controls": [
+        "W / S — elevator",
+        "A / D — ailerons",
+        "Q / E — rudder",
+        "Shift / Ctrl — throttle",
+        "F / G — flaps / gear",
+        "Space — brakes",
+        "V — cycle view",
+        "P — pause"
+      ],
+      "status": "live",
+      "featured": true,
+      "added": "2026-07-25"
+    },
     {
       "id": "kintspark-fracture-run",
       "title": "KINTSPARK: Fracture Run",
@@ -26,8 +56,34 @@
         "Esc - back to Arcade"
       ],
       "status": "live",
-      "featured": true,
+      "featured": false,
       "added": "2026-07-21"
+    },
+    {
+      "id": "serpent-shore-rally",
+      "title": "SERPENT SHORE RALLY",
+      "subtitle": "Tidebreaker Coast Kart Racing",
+      "description": "Drift across sunlit sand, cave ramps, and a half-submerged shortcut. Outrace five rivals over three laps with tactical items and boost-charged corners.",
+      "path": "./serpent-shore-rally/index.html",
+      "thumbnail": "./thumbnails/serpent-shore-rally.png",
+      "icon": "🏁",
+      "accent": "#ffd34e",
+      "tags": [
+        "racing",
+        "kart",
+        "arcade",
+        "single-player"
+      ],
+      "controls": [
+        "← → / A D — steer",
+        "↑ / W — accelerate",
+        "Shift — drift",
+        "Space — use item",
+        "P — pause"
+      ],
+      "status": "live",
+      "featured": false,
+      "added": "2026-07-15"
     },
     {
       "id": "cow-abductor",
@@ -80,6 +136,31 @@
       "added": "2026-07-03"
     },
     {
+      "id": "joust",
+      "title": "JOUST",
+      "subtitle": "Skybound Rivalry",
+      "description": "Flap for height, strike above rival riders, and collect their eggs before they hatch. Survive escalating waves with three lives and no room for a low approach.",
+      "path": "./joust/index.html",
+      "thumbnail": "./thumbnails/joust.png",
+      "icon": "⚔️",
+      "accent": "#f7bf53",
+      "tags": [
+        "flight-combat",
+        "action",
+        "arcade",
+        "single-player"
+      ],
+      "controls": [
+        "A / D or ← → — steer",
+        "W / ↑ / Space — flap",
+        "S / ↓ — dive",
+        "Esc — back to arcade"
+      ],
+      "status": "live",
+      "featured": false,
+      "added": "2026-07-14"
+    },
+    {
       "id": "asteroid-drift",
       "title": "ASTEROID DRIFT",
       "subtitle": "Vector Space. Survive.",
@@ -109,8 +190,8 @@
     {
       "id": "neon-snake",
       "title": "NEON SNAKE",
-      "subtitle": "Glow Trails. Speed Ramp.",
-      "description": "Classic snake with phosphor glow trails. Eat food, grow longer, move faster. Every five pickups the multiplier climbs. High score saves locally.",
+      "subtitle": "Bend Time. Chain the Circuit.",
+      "description": "A modern neon snake run with smooth movement, buffered steering, Focus slow-time, rescue shields, five pickup types, timed combos, portals, and escalating speed tiers.",
       "path": "./neon-snake/index.html",
       "thumbnail": "./thumbnails/neon-snake.png",
       "icon": "🐍",
@@ -122,8 +203,8 @@
       ],
       "controls": [
         "WASD / Arrows — steer",
-        "P — pause",
-        "Esc — back to arcade"
+        "Space — Focus",
+        "P / Esc — pause"
       ],
       "status": "live",
       "featured": false,

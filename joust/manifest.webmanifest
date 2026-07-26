@@ -1,0 +1,26 @@
+{
+  "name": "Joust by Zouroboros Game Studio",
+  "short_name": "Joust",
+  "description": "Original web arcade flight combat game by Zouroboros Game Studio.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#08111f",
+  "theme_color": "#08111f",
+  "orientation": "landscape",
+  "categories": ["games", "entertainment"],
+  "icons": [
+    {
+      "src": "./icons/joust-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/joust-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
