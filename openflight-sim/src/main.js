@@ -10,6 +10,7 @@
 
 import * as THREE from "three";
 import * as atmosphere from "./atmosphere.js";
+import { WEATHER_PRESETS } from "./atmosphere.js";
 import { createFlightModel, AIRFRAMES, airframeList } from "./flight-model.js";
 import { createWorld } from "./world.js";
 import { createInstruments } from "./instruments.js";
@@ -20,7 +21,7 @@ import { createMissions, MISSIONS } from "./missions.js";
 const FIXED_DT = 1 / 120;
 const MAX_SUBSTEPS = 5;
 const MAX_FRAME_TIME = 0.25;
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 
 const SCREENS = Object.freeze(["title", "briefing", "flying", "paused", "debrief"]);
 
@@ -68,6 +69,7 @@ const missions = createMissions();
 
 let selectedAirframe = "trainer";
 let selectedMissionId = "freeflight";
+let selectedWeather = "calm";
 let accumulator = 0;
 let last = performance.now();
 let rafId = 0;
@@ -96,6 +98,10 @@ function beginFlight() {
   // Wire the briefing selection through (ZOU-920 remediation #1): the chosen
   // airframe is what actually flies.
   flightModel.setAirframe(selectedAirframe);
+  // OFS-002: bind the chosen weather preset to the flight model's wind model
+  // (steady wind + discrete gusts + continuous turbulence). Defaults to calm,
+  // preserving T1 behaviour.
+  flightModel.setWeatherPreset(WEATHER_PRESETS[selectedWeather] || WEATHER_PRESETS.calm);
   input.reset();
   sim.pos.set(0, 300, -200);
   sim.prevPos.copy(sim.pos);
@@ -337,6 +343,7 @@ function init() {
 function populateBriefing() {
   const af = document.getElementById("briefing-airframe");
   const ms = document.getElementById("briefing-mission");
+  const wx = document.getElementById("briefing-weather");
   // Build the briefing with the DOM API + textContent (ZOU-920 remediation #6)
   // so airframe/mission names and summaries cannot inject markup.
   if (af) {
@@ -371,6 +378,27 @@ function populateBriefing() {
       const b = e.target.closest("[data-mission]"); if (!b) return;
       selectedMissionId = b.dataset.mission;
       [...ms.children].forEach((c) => c.classList.toggle("sel", c === b));
+    });
+  }
+  // OFS-002: weather preset picker. Per-preset steady wind, discrete gusts and
+  // continuous turbulence are configured here and bound to the flight model on
+  // launch (defaults to Calm, so T1 behaviour is unchanged).
+  if (wx) {
+    const presets = Object.values(WEATHER_PRESETS);
+    wx.replaceChildren(...presets.map((p) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.dataset.weather = p.id;
+      if (p.id === selectedWeather) btn.classList.add("sel");
+      const small = document.createElement("small");
+      small.textContent = `wind ${p.windN} m/s · gust ${p.gustiness} · turb ${p.turbulence}`;
+      btn.append(p.label, small);
+      return btn;
+    }));
+    wx.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-weather]"); if (!b) return;
+      selectedWeather = b.dataset.weather;
+      [...wx.children].forEach((c) => c.classList.toggle("sel", c === b));
     });
   }
 }
