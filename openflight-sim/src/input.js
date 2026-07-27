@@ -221,6 +221,14 @@ export function createInput(target = window) {
       touch.roll = 0; touch.pitch = 0; touch.throttle = null; touch.brakes = 0;
       if (touchUI) touchUI.reset();
     },
+    // Seed the latched controls for a mission spawn (e.g. a landing that starts
+    // gear-down with approach flap and part throttle). Additive; call after
+    // reset(). Absent fields are left at their reset defaults.
+    configure({ throttle: t, flaps: f, gear: gr } = {}) {
+      if (typeof t === "number") throttle = clamp(t, 0, 1);
+      if (typeof f === "number") flaps = clamp(f, 0, FLAPS_MAX);
+      if (typeof gr === "number") gearDown = gr ? 1 : 0;
+    },
     dispose() {
       if (!doc) return;
       target.removeEventListener("keydown", down);
