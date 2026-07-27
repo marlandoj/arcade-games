@@ -21,7 +21,7 @@ import { createMissions, MISSIONS } from "./missions.js";
 const FIXED_DT = 1 / 120;
 const MAX_SUBSTEPS = 5;
 const MAX_FRAME_TIME = 0.25;
-const VERSION = "0.2.0";
+const VERSION = "0.3.0";
 
 const SCREENS = Object.freeze(["title", "briefing", "flying", "paused", "debrief"]);
 
@@ -98,6 +98,10 @@ function beginFlight() {
   // Wire the briefing selection through (ZOU-920 remediation #1): the chosen
   // airframe is what actually flies.
   flightModel.setAirframe(selectedAirframe);
+  // OFS-003: swap in the matching aircraft mesh and seed the ground elevation
+  // from the shared terrain field so gear contact starts on the right surface.
+  world.setAirframe(selectedAirframe);
+  flightModel.setGroundElevation(world.terrainHeight(0, -200));
   // OFS-002: bind the chosen weather preset to the flight model's wind model
   // (steady wind + discrete gusts + continuous turbulence). Defaults to calm,
   // preserving T1 behaviour.
@@ -197,6 +201,10 @@ function stepSimulation(dt) {
   if (controls.hudToggle) instruments.setHudVisible(!instruments.isHudVisible());
   if (controls.viewToggle) cycleView();
 
+  // OFS-003: the flight model's gear/ground reaction reads the same seeded
+  // terrain surface the player sees, so contact and collision agree with it.
+  flightModel.setGroundElevation(world.terrainHeight(sim.pos.x, sim.pos.z));
+
   flightModel.step(dt, sim, env, controls);
 
   sim.altitude = sim.pos.y;
@@ -210,7 +218,9 @@ function stepSimulation(dt) {
   missions.update(dt, sim);
 
   if (sim.fuel <= 0) { endFlight("fuel"); return; }
-  if (sim.altitude <= 0) { endFlight("terrain"); return; }
+  // Terrain collision uses the queried surface elevation under the aircraft, so
+  // the crash floor follows the hills instead of a flat plane at y=0.
+  if (sim.altitude <= world.terrainHeight(sim.pos.x, sim.pos.z)) { endFlight("terrain"); return; }
   const rem = missions.remaining();
   if (isFinite(rem) && rem <= 0) { endFlight("complete"); return; }
 }
