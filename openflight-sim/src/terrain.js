@@ -41,10 +41,16 @@ function valueNoise(x, z, seed) {
 }
 
 // Distance from a point to the runway centre segment in the ground plane, used
-// to decide how much of the airfield footprint to flatten.
-function distToRunway(x, z, rw) {
-  // Segment runs along +z from threshold to the far end at x = rw.threshold.x.
-  const z0 = rw.threshold.z;
+// to decide how much of the airfield footprint to flatten. The segment is
+// extended `approach` metres off the threshold so the final-approach corridor is
+// levelled with the runway, not just the pavement: the landing mission joins a
+// 3° glidepath ~1.8 km out, which is only ~94 m above the datum, and an
+// unflattened fBm ridge inside that corridor reaches ~107 m — terrain *above*
+// the published glidepath, i.e. an approach that cannot be flown.
+function distToRunway(x, z, rw, approach = 0) {
+  // Segment runs along +z from the approach fix, through the threshold, to the
+  // far end, all at x = rw.threshold.x.
+  const z0 = rw.threshold.z - approach;
   const z1 = rw.threshold.z + rw.length;
   const cz = Math.max(z0, Math.min(z1, z));
   return Math.hypot(x - rw.threshold.x, z - cz);
@@ -65,6 +71,7 @@ export function createTerrain(options = {}) {
   const runway = options.runway;
   const flatRadius = options.flatRadius ?? 520;   // fully level out to here
   const blendRadius = options.blendRadius ?? 2100; // ease to full terrain by here
+  const approach = options.approach ?? 2000;      // corridor levelled off the threshold
 
   // fBm in [0,1], seed-mixed per octave so octaves are decorrelated.
   function fbm(x, z) {
@@ -88,7 +95,7 @@ export function createTerrain(options = {}) {
 
   function airfieldBlend(x, z) {
     if (!runway) return 1;
-    const d = distToRunway(x, z, runway);
+    const d = distToRunway(x, z, runway, approach);
     if (d <= flatRadius) return 0;             // fully flat
     if (d >= blendRadius) return 1;            // full terrain
     return smootherstep((d - flatRadius) / (blendRadius - flatRadius));
@@ -104,6 +111,7 @@ export function createTerrain(options = {}) {
   return {
     seed,
     amplitude,
+    approach,
     heightAt,
     airfieldBlend,
     // Elevation-banded colour ramp (grass → scrub → rock → snow).

@@ -1,7 +1,37 @@
 {
   "version": 1,
-  "updated": "2026-07-25",
+  "updated": "2026-07-27",
   "games": [
+    {
+      "id": "openflight-sim",
+      "title": "OPENFLIGHT SIM",
+      "subtitle": "Study-Level Browser Flight — Factory Build",
+      "description": "A fixed-step 6-DOF flight simulator built by the Zouroboros Software Factory conveyor. ISA atmosphere with wind, gusts and turbulence, spring-damper gear, three airframes — Skyliner T-76, Voltige X1 and Lumina J-7 — over seeded procedural terrain with a marked runway, approach lighting and a live PAPI. Analog six-pack, glass HUD, four scored missions, and a landing graded on the debrief.",
+      "path": "./openflight-sim/index.html",
+      "thumbnail": "./thumbnails/openflight-sim.png",
+      "icon": "🛩️",
+      "accent": "#22d3ee",
+      "tags": [
+        "simulation",
+        "3d",
+        "flight",
+        "physics",
+        "single-player"
+      ],
+      "controls": [
+        "W / S — pitch",
+        "A / D — roll",
+        "Q / E — rudder",
+        "Shift / Ctrl — throttle",
+        "F / G — flaps / gear",
+        "Space — wheel brakes",
+        "V — cycle view",
+        "P — pause"
+      ],
+      "status": "live",
+      "featured": false,
+      "added": "2026-07-27"
+    },
     {
       "id": "opus5-flight-sim",
       "title": "OPUS 5 FLIGHT SIM",
