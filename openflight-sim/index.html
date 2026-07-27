@@ -51,20 +51,86 @@
     color: var(--ink); border-radius: 8px; padding: 7px 11px; font-size: 15px;
     cursor: pointer; backdrop-filter: blur(6px);
   }
-
-  /* ── HUD overlay ─────────────────────────────────────────── */
-  #hud { position: fixed; inset: 0; z-index: 30; pointer-events: none; display: none; }
-  .ofs-hud {
-    position: absolute; top: 56px; left: 50%; transform: translateX(-50%);
-    display: flex; gap: 14px; background: rgba(4,8,14,0.55); border: 1px solid rgba(34,211,238,0.25);
-    padding: 8px 14px; font-family: var(--mono); font-size: 13px; color: var(--cyan);
-    text-shadow: 0 0 6px rgba(34,211,238,0.5); letter-spacing: 0.06em;
+  #help-btn {
+    position: fixed; top: 14px; right: 62px; z-index: 60;
+    background: var(--panel); border: 1px solid rgba(255,255,255,0.14);
+    color: var(--cyan); border-radius: 8px; padding: 7px 12px; font-size: 15px;
+    cursor: pointer; backdrop-filter: blur(6px); font-family: var(--pixel);
+    line-height: 1; font-weight: 700;
   }
-  .ofs-hud-row { display: flex; gap: 5px; align-items: baseline; }
-  .ofs-hud-row span { opacity: 0.6; font-size: 10px; }
-  .ofs-hud-row b { font-size: 16px; font-weight: 700; color: #eafcff; }
+  #help-btn:hover, #mute-btn:hover { border-color: var(--cyan); }
+
+  /* ── Instruments overlay ─────────────────────────────────── */
+  #hud { position: fixed; inset: 0; z-index: 30; pointer-events: none; display: none; }
+
+  /* Glass HUD (toggleable) */
+  .ofs-glass { position: absolute; inset: 0; pointer-events: none; }
+  .ofs-glass-svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .ofs-h-line { stroke: rgba(70,227,107,0.75); stroke-width: 2; }
+  .ofs-h-tick { stroke: rgba(70,227,107,0.6); stroke-width: 2; }
+  .ofs-h-num { fill: rgba(70,227,107,0.8); font: 22px var(--mono); }
+  .ofs-bore-line { stroke: var(--amber); stroke-width: 3; fill: none; }
+  .ofs-fpm-ring { fill: none; stroke: var(--green); stroke-width: 3; }
+  .ofs-fpm-wings { stroke: var(--green); stroke-width: 3; }
+  .ofs-tape {
+    position: absolute; background: rgba(4,10,16,0.5); border: 1px solid rgba(70,227,107,0.4);
+    color: var(--green); font-family: var(--mono); padding: 5px 9px; text-shadow: 0 0 6px rgba(70,227,107,0.5);
+    display: flex; gap: 5px; align-items: baseline;
+  }
+  .ofs-tape b { font-size: 22px; color: #d6ffe2; }
+  .ofs-tape-l { font-size: 10px; opacity: 0.7; }
+  .ofs-tape-u { font-size: 10px; opacity: 0.6; }
+  .ofs-tape-left { left: 24px; top: 50%; transform: translateY(-50%); flex-direction: column; align-items: flex-start; }
+  .ofs-tape-right { right: 24px; top: 50%; transform: translateY(-160%); flex-direction: column; align-items: flex-end; }
+  .ofs-tape-top { top: 54px; left: 50%; transform: translateX(-50%); }
+  .ofs-tape-vsi { right: 24px; top: 50%; transform: translateY(60%); flex-direction: column; align-items: flex-end; }
+
+  /* Analog six-pack (+power) rack */
+  .ofs-rack {
+    position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+    display: flex; gap: 8px; padding: 8px 10px; background: rgba(4,7,13,0.72);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; backdrop-filter: blur(6px);
+    max-width: 96vw; flex-wrap: nowrap;
+  }
+  .ofs-gauge { position: relative; width: 92px; height: 108px; }
+  .ofs-gauge svg { width: 92px; height: 92px; display: block; }
+  .ofs-gauge-cap {
+    position: absolute; bottom: 2px; left: 0; right: 0; text-align: center;
+    font-family: var(--pixel); font-size: 7px; color: var(--dim); letter-spacing: 0.1em;
+  }
+  .ofs-gauge-sub { position: absolute; top: 2px; left: 0; right: 0; text-align: center; font-size: 7px; color: var(--dim); }
+  .ofs-bezel { fill: #0b1018; stroke: rgba(255,255,255,0.18); stroke-width: 2; }
+  .ofs-dial { fill: #05070c; }
+  .ofs-dial-ring { fill: none; stroke: rgba(255,255,255,0.2); stroke-width: 2; }
+  .ofs-tick { stroke: rgba(215,227,240,0.65); stroke-width: 2; }
+  .ofs-tick-num { fill: rgba(215,227,240,0.75); font: 11px var(--mono); }
+  .ofs-needle-line { stroke: var(--cyan); stroke-width: 3; stroke-linecap: round; }
+  .ofs-needle-k .ofs-needle-line { stroke: var(--ink); stroke-width: 5; }
+  .ofs-needle-hub { fill: #e8f6ff; }
+  .ofs-gauge-val { fill: #eafcff; font: 700 15px var(--mono); }
+  /* Attitude indicator */
+  .ofs-ai-sky { fill: #2a6fb0; }
+  .ofs-ai-gnd { fill: #6b4a2a; }
+  .ofs-ai-horizon { stroke: #eafcff; stroke-width: 2; }
+  .ofs-ai-ladder { stroke: rgba(255,255,255,0.8); stroke-width: 1.5; }
+  .ofs-ai-plane { stroke: var(--amber); stroke-width: 3; fill: none; }
+  .ofs-ai-ptr { fill: var(--amber); }
+  /* Turn coordinator */
+  .ofs-tc-mark { stroke: var(--amber); stroke-width: 3; }
+  .ofs-tc-cap { fill: var(--dim); font: 7px var(--mono); }
+  .ofs-tc-body { stroke: var(--cyan); stroke-width: 3; fill: none; stroke-linecap: round; }
+  .ofs-tc-hub { fill: var(--cyan); }
+  .ofs-tc-race { fill: none; stroke: rgba(255,255,255,0.25); stroke-width: 3; }
+  .ofs-tc-cage { stroke: rgba(255,255,255,0.4); stroke-width: 1.5; }
+  .ofs-tc-ball { fill: #1a1a1a; stroke: #d8d8d8; stroke-width: 1; }
+  /* Heading indicator */
+  .ofs-hi-tick { stroke: rgba(215,227,240,0.6); stroke-width: 2; }
+  .ofs-hi-num { fill: rgba(215,227,240,0.85); font: 9px var(--mono); }
+  .ofs-hi-plane { stroke: var(--amber); stroke-width: 2.5; fill: none; }
+
+  /* Panel — throttle / fuel / gear / flaps / stall */
   .ofs-panel {
-    position: absolute; left: 16px; bottom: 16px; width: 220px;
+    position: absolute; left: 16px; bottom: 16px; width: 190px;
     background: var(--panel); border: 1px solid rgba(255,255,255,0.10); padding: 12px;
     font-family: var(--mono); font-size: 12px; display: flex; flex-direction: column; gap: 9px;
     backdrop-filter: blur(6px);
@@ -72,8 +138,63 @@
   .ofs-panel-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
   .ofs-panel-row > span { color: var(--dim); letter-spacing: 0.1em; font-size: 10px; }
   .ofs-panel-row > b { color: var(--ink); font-size: 13px; }
+  .ofs-panel-row > b.up { color: var(--amber); }
   .ofs-bar { flex: 1; height: 9px; background: rgba(255,255,255,0.10); border-radius: 5px; overflow: hidden; }
   .ofs-bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), var(--green)); transition: width 0.1s linear; }
+  .ofs-bar > i.warn { background: linear-gradient(90deg, var(--red), var(--amber)); }
+  .ofs-stall { justify-content: center; }
+  .ofs-stall > b { font-family: var(--pixel); font-size: 9px; color: rgba(255,77,77,0.18); letter-spacing: 0.14em; }
+  .ofs-stall > b.on { color: var(--red); text-shadow: 0 0 10px var(--red); animation: ofs-blink 0.4s steps(1) infinite; }
+  @keyframes ofs-blink { 50% { opacity: 0.25; } }
+
+  /* On-screen touch controls */
+  .ofs-touch { position: fixed; inset: 0; z-index: 45; pointer-events: none; display: none; }
+  .ofs-touch.is-touch { display: block; }
+  .ofs-touch > * { pointer-events: auto; }
+  .ofs-stick {
+    position: absolute; left: 20px; bottom: 26px; width: 140px; height: 140px; border-radius: 50%;
+    background: rgba(10,16,26,0.5); border: 2px solid rgba(34,211,238,0.35); touch-action: none;
+  }
+  .ofs-stick-knob {
+    position: absolute; left: 50%; top: 50%; width: 54px; height: 54px; margin: -27px 0 0 -27px;
+    border-radius: 50%; background: rgba(34,211,238,0.35); border: 2px solid var(--cyan);
+  }
+  .ofs-thr {
+    position: absolute; right: 22px; bottom: 26px; width: 54px; height: 150px; border-radius: 10px;
+    background: rgba(10,16,26,0.5); border: 2px solid rgba(70,227,107,0.4); overflow: hidden; touch-action: none;
+  }
+  .ofs-thr > i { position: absolute; left: 0; right: 0; bottom: 0; height: 60%; background: linear-gradient(0deg, var(--green), rgba(70,227,107,0.2)); }
+  .ofs-thr-knob { position: absolute; left: 4px; right: 4px; height: 8px; bottom: calc(60% - 12px); background: #eafcff; border-radius: 3px; }
+  .ofs-thr > span { position: absolute; bottom: 4px; left: 0; right: 0; text-align: center; font: 8px var(--pixel); color: var(--dim); }
+  .ofs-touch-btns { position: absolute; right: 18px; top: 64px; display: flex; flex-direction: column; gap: 8px; }
+  .ofs-tbtn {
+    width: 62px; padding: 9px 0; border-radius: 8px; background: rgba(10,16,26,0.6);
+    border: 1px solid rgba(255,255,255,0.2); color: var(--ink); font: 9px var(--pixel); letter-spacing: 0.06em;
+  }
+  .ofs-tbtn.on { border-color: var(--cyan); color: var(--cyan); background: rgba(34,211,238,0.16); }
+
+  /* Controls-reference modal */
+  #controls-modal {
+    position: fixed; inset: 0; z-index: 70; display: none; align-items: center; justify-content: center;
+    background: rgba(3,5,12,0.8); backdrop-filter: blur(5px); padding: 20px;
+  }
+  #controls-modal.is-open { display: flex; }
+  .ofs-modal-card {
+    background: #070b14; border: 1px solid rgba(34,211,238,0.4); border-radius: 12px; padding: 24px 26px;
+    max-width: 640px; width: 100%; max-height: 88vh; overflow: auto; box-shadow: 0 0 40px rgba(34,211,238,0.2);
+  }
+  .ofs-modal-title { font-family: var(--pixel); font-size: 16px; color: var(--cyan); letter-spacing: 0.12em; text-shadow: 0 0 8px var(--cyan); margin-bottom: 18px; }
+  .ofs-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  .ofs-modal-head { font-family: var(--pixel); font-size: 9px; color: var(--green); letter-spacing: 0.12em; margin: 12px 0 8px; }
+  .ofs-modal-head:first-child { margin-top: 0; }
+  .ofs-modal-card ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .ofs-modal-card li { display: flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 13px; color: var(--ink); }
+  .ofs-modal-card li span { color: var(--dim); }
+  .ofs-modal-card kbd {
+    display: inline-block; min-width: 22px; padding: 2px 6px; border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 4px; font-family: var(--mono); font-size: 11px; color: var(--ink); background: rgba(255,255,255,0.05); text-align: center;
+  }
+  #controls-close { margin-top: 20px; }
 
   /* ── Screens ─────────────────────────────────────────────── */
   #screen-root { position: fixed; inset: 0; z-index: 50; }
@@ -136,10 +257,16 @@
   /* ── Pause ───────────────────────────────────────────────── */
   .ofs-pause-title { font-family: var(--pixel); font-size: clamp(28px, 6vw, 54px); color: var(--amber); text-shadow: 0 0 12px var(--amber); letter-spacing: 0.1em; }
 
-  @media (max-width: 720px) {
-    .ofs-panel { width: 168px; font-size: 11px; }
-    .ofs-hud { font-size: 11px; gap: 9px; padding: 6px 10px; }
-    .ofs-hud-row b { font-size: 13px; }
+  @media (max-width: 860px) {
+    .ofs-rack { gap: 4px; padding: 5px 6px; }
+    .ofs-gauge { width: 62px; height: 74px; }
+    .ofs-gauge svg { width: 62px; height: 62px; }
+    .ofs-panel { width: 150px; font-size: 11px; padding: 9px; }
+    .ofs-modal-grid { grid-template-columns: 1fr; gap: 10px; }
+  }
+  @media (max-width: 560px) {
+    .ofs-rack { flex-wrap: wrap; justify-content: center; max-width: 88vw; }
+    .ofs-panel { width: 128px; }
   }
 </style>
 </head>
@@ -148,9 +275,55 @@
 <canvas id="scene"></canvas>
 
 <a id="back-link" href="../index.html" title="Back to Arcade">← BACK</a>
-<button id="mute-btn" title="Mute (M)">🔊</button>
+<button id="help-btn" title="Controls (C)" aria-label="Controls reference">?</button>
+<button id="mute-btn" title="Mute (M)" aria-pressed="false">🔊</button>
 
 <div id="hud"></div>
+
+<!-- Controls reference — reachable from the shell (button or C key) -->
+<div id="controls-modal" role="dialog" aria-modal="true" aria-label="Controls reference">
+  <div class="ofs-modal-card">
+    <div class="ofs-modal-title">CONTROLS</div>
+    <div class="ofs-modal-grid">
+      <div>
+        <div class="ofs-modal-head">▸ KEYBOARD</div>
+        <ul>
+          <li><kbd>↑</kbd><kbd>↓</kbd> / <kbd>W</kbd><kbd>S</kbd><span>pitch</span></li>
+          <li><kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd><span>roll</span></li>
+          <li><kbd>Q</kbd><kbd>E</kbd><span>yaw / rudder</span></li>
+          <li><kbd>Shift</kbd><kbd>Ctrl</kbd><span>throttle up / down</span></li>
+          <li><kbd>F</kbd><span>flaps (detent)</span></li>
+          <li><kbd>G</kbd><span>gear up / down</span></li>
+          <li><kbd>Space</kbd><span>wheel brakes</span></li>
+          <li><kbd>V</kbd><span>cycle view</span></li>
+          <li><kbd>H</kbd><span>toggle HUD</span></li>
+          <li><kbd>M</kbd><span>mute</span></li>
+          <li><kbd>P</kbd><span>pause</span></li>
+          <li><kbd>Esc</kbd><span>back to arcade</span></li>
+        </ul>
+      </div>
+      <div>
+        <div class="ofs-modal-head">▸ MOUSE YOKE</div>
+        <ul>
+          <li><span>Hold the left button over the scene and steer with the pointer; release re-centres.</span></li>
+        </ul>
+        <div class="ofs-modal-head">▸ GAMEPAD</div>
+        <ul>
+          <li><span>Left stick — pitch / roll</span></li>
+          <li><span>Right stick X — rudder</span></li>
+          <li><span>Right trigger — throttle</span></li>
+        </ul>
+        <div class="ofs-modal-head">▸ TOUCH</div>
+        <ul>
+          <li><span>Left stick — pitch / roll</span></li>
+          <li><span>Right slider — throttle</span></li>
+          <li><span>Buttons — gear, flap, brake, view, HUD</span></li>
+        </ul>
+      </div>
+    </div>
+    <button class="ofs-cta ghost" id="controls-close">CLOSE</button>
+  </div>
+</div>
 
 <div id="screen-root" data-screen="title">
   <!-- Title -->
@@ -159,8 +332,8 @@
     <div class="ofs-sub">— STUDY-LEVEL BROWSER FLIGHT —</div>
     <div class="ofs-tag">A fixed-step rigid-body flight simulator built by the Zouroboros Software Factory on open-weights models. ISA atmosphere, 6-DOF flight dynamics, three airframes, and a ground-reaction model fly over seeded procedural terrain with a marked airfield, PAPI, and layered sky.</div>
     <button class="ofs-cta" id="start-btn">▶ START</button>
-    <div class="ofs-hint"><kbd>Enter</kbd>/<kbd>Space</kbd> begin &nbsp; <kbd>P</kbd> pause &nbsp; <kbd>Esc</kbd> back to arcade</div>
-    <div class="ofs-credit">OFS-003 · TERRAIN · AIRFIELD · SKY · MESHES · v0.3.0</div>
+    <div class="ofs-hint"><kbd>Enter</kbd>/<kbd>Space</kbd> begin &nbsp; <kbd>P</kbd> pause &nbsp; <kbd>C</kbd> controls &nbsp; <kbd>Esc</kbd> back to arcade</div>
+    <div class="ofs-credit">OFS-004 · SIX-PACK · HUD · WEBAUDIO · INPUT · v0.4.0</div>
   </section>
 
   <!-- Briefing -->
