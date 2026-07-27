@@ -13,7 +13,7 @@ import * as atmosphere from "./atmosphere.js";
 import { WEATHER_PRESETS } from "./atmosphere.js";
 import { createFlightModel, AIRFRAMES, airframeList } from "./flight-model.js";
 import { createWorld } from "./world.js";
-import { createInstruments } from "./instruments.js";
+import { createInstruments, attitudeFromQuat } from "./instruments.js";
 import { createAudio } from "./audio.js";
 import { createInput, CONTROLS_SHAPE } from "./input.js";
 import { createMissions, MISSIONS } from "./missions.js";
@@ -21,7 +21,7 @@ import { createMissions, MISSIONS } from "./missions.js";
 const FIXED_DT = 1 / 120;
 const MAX_SUBSTEPS = 5;
 const MAX_FRAME_TIME = 0.25;
-const VERSION = "0.3.0";
+const VERSION = "0.4.0";
 
 const SCREENS = Object.freeze(["title", "briefing", "flying", "paused", "debrief"]);
 
@@ -52,6 +52,18 @@ const sim = {
   throttle: 0.6,
   gear: 1,
   flaps: 0,
+  // Derived read-only state published for instruments/audio (they never mutate
+  // sim). Attitude comes from the quaternion; aero/ground state from the flight
+  // model. OFS-004 consumers read these; the flight model owns the truth.
+  pitch: 0,
+  bank: 0,
+  noseHeading: 0,
+  stalled: false,
+  loadFactor: 1,
+  aoa: 0,
+  sideslip: 0,
+  onGround: false,
+  gearForce: 0,
   controls: { ...CONTROLS_SHAPE },
   mission: null,
   result: null,
@@ -82,7 +94,9 @@ function setScreen(next) {
     if (el) el.classList.toggle("is-active", id === next);
   }
   const hudVisible = next === "flying";
-  hudRoot.style.display = hudVisible ? "" : "none";
+  // Use an explicit value, not "": the #hud rule defaults to display:none, so an
+  // empty inline value would fall back to that and hide the whole overlay.
+  hudRoot.style.display = hudVisible ? "block" : "none";
   if (next === "flying") {
     accumulator = 0;
     last = performance.now();
@@ -126,6 +140,9 @@ function beginFlight() {
   missions.reset();
   sim.mission = missions.start(selectedMissionId);
   audio.init();
+  // The HUD glass defaults on at the start of a flight; the H toggle (and its
+  // state through a pause) is preserved by setScreen.
+  instruments.setHudVisible(true);
   setScreen("flying");
 }
 
@@ -215,6 +232,22 @@ function stepSimulation(dt) {
   sim.fuel = Math.max(0, sim.fuel - 0.02 * controls.throttle * dt);
   sim.t += dt;
 
+  // Publish derived read-only state for the instruments and audio (OFS-004).
+  // Attitude (nose pitch/bank/heading) is read straight off the quaternion; the
+  // aero and ground-reaction state come from the flight model, which owns them.
+  const att = attitudeFromQuat(sim.quat);
+  sim.pitch = att.pitch;
+  sim.bank = att.bank;
+  sim.noseHeading = att.heading;
+  const aero = flightModel.aeroState();
+  const fw = flightModel.forces();
+  sim.stalled = !!aero.stalled;
+  sim.loadFactor = aero.loadFactor;
+  sim.aoa = aero.alpha;
+  sim.sideslip = aero.beta;
+  sim.gearForce = fw.gear;
+  sim.onGround = fw.gear > 50; // meaningful weight on wheels
+
   missions.update(dt, sim);
 
   if (sim.fuel <= 0) { endFlight("fuel"); return; }
@@ -300,9 +333,13 @@ function onKey(e) {
   const k = e.key;
   if (k === "Escape") {
     e.preventDefault();
+    // A visible controls reference swallows Esc first, so it does not eject the
+    // player to the arcade while they are reading the reference.
+    if (isControlsOpen()) { closeControls(); return; }
     location.href = "../index.html";
     return;
   }
+  if (k === "c" || k === "C") { e.preventDefault(); toggleControls(); return; }
   if (k === "p" || k === "P") {
     e.preventDefault();
     pauseOrResume();
@@ -332,8 +369,27 @@ function onResize() {
 function toggleMute() {
   audio.setMuted(!audio.isMuted());
   const btn = document.getElementById("mute-btn");
-  if (btn) btn.textContent = audio.isMuted() ? "🔇" : "🔊";
+  if (btn) {
+    btn.textContent = audio.isMuted() ? "🔇" : "🔊";
+    btn.setAttribute("aria-pressed", String(audio.isMuted()));
+  }
 }
+
+// Controls reference — reachable from the shell via the "?" button or the C key
+// (and closable with Esc). It is a static overlay listing every input method.
+function isControlsOpen() {
+  const el = document.getElementById("controls-modal");
+  return !!el && el.classList.contains("is-open");
+}
+function openControls() {
+  const el = document.getElementById("controls-modal");
+  if (el) el.classList.add("is-open");
+}
+function closeControls() {
+  const el = document.getElementById("controls-modal");
+  if (el) el.classList.remove("is-open");
+}
+function toggleControls() { isControlsOpen() ? closeControls() : openControls(); }
 
 function init() {
   setScreen("title");
@@ -347,6 +403,12 @@ function init() {
   document.getElementById("debrief-menu-btn").addEventListener("click", () => setScreen("title"));
   document.getElementById("mute-btn").addEventListener("click", toggleMute);
   document.getElementById("back-link").addEventListener("click", (e) => { e.preventDefault(); location.href = "../index.html"; });
+  const helpBtn = document.getElementById("help-btn");
+  if (helpBtn) helpBtn.addEventListener("click", toggleControls);
+  const closeBtn = document.getElementById("controls-close");
+  if (closeBtn) closeBtn.addEventListener("click", closeControls);
+  const modal = document.getElementById("controls-modal");
+  if (modal) modal.addEventListener("click", (e) => { if (e.target === modal) closeControls(); });
   rafId = requestAnimationFrame(frame);
 }
 
@@ -436,10 +498,18 @@ const OPENFLIGHT = Object.freeze({
       altitude: sim.altitude,
       airspeed: sim.airspeed,
       heading: sim.heading,
+      noseHeading: sim.noseHeading,
       verticalSpeed: sim.verticalSpeed,
+      pitch: sim.pitch,
+      bank: sim.bank,
+      stalled: sim.stalled,
+      loadFactor: sim.loadFactor,
+      onGround: sim.onGround,
       throttle: sim.throttle,
       fuel: sim.fuel,
       rpm: sim.rpm,
+      muted: audio.isMuted(),
+      hudVisible: instruments.isHudVisible(),
       pos: sim.pos.toArray(),
       vel: sim.vel.toArray(),
       quat: sim.quat.toArray(),
