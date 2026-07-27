@@ -18,6 +18,7 @@
 import * as THREE from "three";
 import { createTerrain, papiIndication, PAPI_GLIDEPATH_DEG } from "./terrain.js";
 import { createAirframeMesh } from "./airframe-mesh.js";
+import { gateFacing } from "./missions.js";
 
 export const RUNWAY = Object.freeze({
   threshold: Object.freeze({ x: 0, z: 0 }),
@@ -283,6 +284,28 @@ export function createWorld(scene, options = {}) {
   let aircraft = createAirframeMesh(airframeId);
   scene.add(aircraft.group);
 
+  // ── Navigation-course gates (additive, OFS-005) ────────────────────────────
+  // The mission layer owns the course geometry and scoring; world.js only draws
+  // it. `setCourse` (re)builds the rings, `setActiveGate` colours the next gate.
+  const courseGroup = new THREE.Group();
+  courseGroup.visible = false;
+  scene.add(courseGroup);
+  disposables.objs.push(courseGroup);
+  let gateRings = [];
+  const GATE_NEXT = new THREE.Color(0x22d3ee);
+  const GATE_DONE = new THREE.Color(0x46e36b);
+  const GATE_TODO = new THREE.Color(0x6b7a8f);
+  let activeGate = 0;
+
+  function clearCourse() {
+    for (const ring of gateRings) {
+      courseGroup.remove(ring);
+      ring.geometry.dispose();
+      ring.material.dispose();
+    }
+    gateRings = [];
+  }
+
   let viewMode = "chase";
   let papiWhites = 2;
 
@@ -306,6 +329,30 @@ export function createWorld(scene, options = {}) {
 
     get papi() { return { whites: papiWhites, glidepath: PAPI_GLIDEPATH_DEG }; },
 
+    // Build the visible gate rings for a navigation course (empty ⇒ hide them).
+    setCourse(gates) {
+      clearCourse();
+      const list = Array.isArray(gates) ? gates : [];
+      for (let i = 0; i < list.length; i++) {
+        const g = list[i];
+        const geo = new THREE.TorusGeometry(g.r || 120, 4, 8, 40);
+        const mat = new THREE.MeshBasicMaterial({ color: GATE_TODO, transparent: true, opacity: 0.85 });
+        const ring = new THREE.Mesh(geo, mat);
+        ring.position.set(g.x, g.y, g.z);
+        // TorusGeometry already lies in XY with its hole on +Z, so aiming that
+        // axis down the arrival leg leaves the ring facing the pilot. A fixed
+        // rotation here would lay it flat and present it edge-on instead.
+        const f = gateFacing(list, i);
+        ring.lookAt(g.x + f.x, g.y + f.y, g.z + f.z);
+        courseGroup.add(ring);
+        gateRings.push(ring);
+      }
+      activeGate = 0;
+      courseGroup.visible = gateRings.length > 0;
+    },
+
+    setActiveGate(i) { activeGate = i; },
+
     update(alpha, sim) {
       _acPos.lerpVectors(sim.prevPos, sim.pos, alpha);
       aircraft.group.position.copy(_acPos);
@@ -325,6 +372,17 @@ export function createWorld(scene, options = {}) {
         bar.visible = bar.userData.seqIndex <= head && bar.userData.seqIndex > head - 3;
       }
 
+      // Gate rings: cleared behind → green, next → pulsing cyan, ahead → grey.
+      if (courseGroup.visible) {
+        const pulse = 0.6 + 0.4 * Math.sin((sim.t || 0) * 4);
+        for (let i = 0; i < gateRings.length; i++) {
+          const ring = gateRings[i];
+          if (i < activeGate) { ring.material.color.copy(GATE_DONE); ring.material.opacity = 0.5; }
+          else if (i === activeGate) { ring.material.color.copy(GATE_NEXT); ring.material.opacity = pulse; }
+          else { ring.material.color.copy(GATE_TODO); ring.material.opacity = 0.8; }
+        }
+      }
+
       // PAPI colours track the live glidepath from the aircraft's position.
       const ind = papiIndication(sim.pos, papiPos);
       papiWhites = ind.whites;
@@ -337,6 +395,7 @@ export function createWorld(scene, options = {}) {
     getView() { return viewMode; },
 
     dispose() {
+      clearCourse();
       scene.remove(...disposables.objs, aircraft.group);
       scene.background = null;
       scene.fog = null;

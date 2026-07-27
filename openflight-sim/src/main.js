@@ -21,7 +21,7 @@ import { createMissions, MISSIONS } from "./missions.js";
 const FIXED_DT = 1 / 120;
 const MAX_SUBSTEPS = 5;
 const MAX_FRAME_TIME = 0.25;
-const VERSION = "0.4.0";
+const VERSION = "0.5.0";
 
 const SCREENS = Object.freeze(["title", "briefing", "flying", "paused", "debrief"]);
 
@@ -104,6 +104,9 @@ function setScreen(next) {
   if (next !== "flying" && next !== "paused") {
     instruments.setHudVisible(false);
   }
+  // The mission banner belongs to the live flight only.
+  const banner = document.getElementById("mission-banner");
+  if (banner) banner.style.display = next === "flying" ? "flex" : "none";
   document.getElementById("screen-root").dataset.screen = next;
 }
 
@@ -121,24 +124,41 @@ function beginFlight() {
   // preserving T1 behaviour.
   flightModel.setWeatherPreset(WEATHER_PRESETS[selectedWeather] || WEATHER_PRESETS.calm);
   input.reset();
-  sim.pos.set(0, 300, -200);
+
+  // OFS-005: the selected mission may override the spawn state (e.g. the landing
+  // approach starts ~1.8 km out on a 3° glidepath, gear down, approach flap).
+  // Default matches the T1 spawn so free flight is unchanged.
+  missions.reset();
+  const spawn = missions.spawnFor(selectedMissionId);
+  const sx = spawn ? spawn.pos[0] : 0;
+  const sy = spawn ? spawn.pos[1] : 300;
+  const sz = spawn ? spawn.pos[2] : -200;
+  const hdg = spawn ? (spawn.heading || 0) : 0;
+  const spd = AIRFRAMES[sim.airframe].cruiseSpeed * 0.7;
+  sim.pos.set(sx, sy, sz);
   sim.prevPos.copy(sim.pos);
-  sim.vel.set(0, 0, AIRFRAMES[sim.airframe].cruiseSpeed * 0.7);
-  sim.quat.identity();
+  // heading 0 ⇒ forward is +z; a yaw about world-up rotates the start vector.
+  sim.vel.set(Math.sin(hdg) * spd, 0, Math.cos(hdg) * spd);
+  sim.quat.setFromAxisAngle(_worldUp, hdg);
+  if (spawn) input.configure({ throttle: spawn.throttle, flaps: spawn.flaps, gear: spawn.gear });
+  flightModel.setGroundElevation(world.terrainHeight(sx, sz));
+
   sim.altitude = sim.pos.y;
   sim.airspeed = sim.vel.length();
   sim.heading = Math.atan2(sim.vel.x, sim.vel.z);
   sim.verticalSpeed = sim.vel.y;
   sim.fuel = 100;
   sim.rpm = 0.6;
-  sim.throttle = 0.6;
-  sim.gear = 1;
-  sim.flaps = 0;
+  sim.throttle = spawn && typeof spawn.throttle === "number" ? spawn.throttle : 0.6;
+  sim.gear = spawn && typeof spawn.gear === "number" ? spawn.gear : 1;
+  sim.flaps = spawn && typeof spawn.flaps === "number" ? spawn.flaps : 0;
   sim.debt = 0;
   sim.t = 0;
   sim.result = null;
-  missions.reset();
   sim.mission = missions.start(selectedMissionId);
+  // Hand the navigation course (if any) to the world so the gate rings render.
+  world.setCourse(missions.course());
+  updateMissionBanner();
   audio.init();
   // The HUD glass defaults on at the start of a flight; the H toggle (and its
   // state through a pause) is preserved by setScreen.
@@ -181,15 +201,51 @@ function renderDebrief() {
   summaryEl.className = "ofs-debrief-summary";
   summaryEl.textContent = r.summary || "Flight complete.";
 
+  // Mission-specific stats (owned by the mission layer); fall back to the
+  // generic flight readout for any result without its own stats.
   const stats = document.createElement("div");
   stats.className = "ofs-debrief-stats";
-  stats.append(
-    statBlock("Duration", Math.round(sim.t) + " s"),
-    statBlock("Altitude", Math.round(sim.altitude * 3.28084) + " ft"),
-    statBlock("Airspeed", Math.round(sim.airspeed * 1.94384) + " kt"),
-  );
+  const rows = Array.isArray(r.stats) && r.stats.length
+    ? r.stats.map((s) => statBlock(String(s.label), String(s.value)))
+    : [
+        statBlock("Duration", Math.round(sim.t) + " s"),
+        statBlock("Altitude", Math.round(sim.altitude * 3.28084) + " ft"),
+        statBlock("Airspeed", Math.round(sim.airspeed * 1.94384) + " kt"),
+      ];
+  stats.append(...rows);
 
-  el.replaceChildren(title, gradeEl, scoreEl, summaryEl, stats);
+  // Session scoring: persisted per-mission best, with a badge on a new record.
+  const hs = document.createElement("div");
+  hs.className = "ofs-debrief-high";
+  if (r.isRecord) {
+    const badge = document.createElement("span");
+    badge.className = "ofs-record";
+    badge.textContent = "★ NEW RECORD";
+    hs.append(badge);
+  } else {
+    hs.textContent = "BEST " + (r.highScore != null ? r.highScore : 0) + " / 100";
+  }
+
+  el.replaceChildren(title, gradeEl, scoreEl, summaryEl, stats, hs);
+}
+
+// OFS-005: live mission objective banner (top-centre while flying). Reflects the
+// active mission's progress — next gate + range, hold-timer, or approach sink /
+// centreline — and the persisted per-mission high score.
+function updateMissionBanner() {
+  const banner = document.getElementById("mission-banner");
+  if (!banner) return;
+  const p = sim.screen === "flying" ? missions.progress(sim) : null;
+  if (!p) { banner.style.display = "none"; return; }
+  const m = missions.active();
+  const hi = m ? missions.highScore(m.id) : 0;
+  const label = document.getElementById("mission-banner-label");
+  const detail = document.getElementById("mission-banner-detail");
+  const best = document.getElementById("mission-banner-best");
+  if (label) label.textContent = p.label;
+  if (detail) detail.textContent = p.detail;
+  if (best) best.textContent = hi > 0 ? "BEST " + hi : "";
+  banner.style.display = "flex";
 }
 
 function statBlock(label, value) {
@@ -264,6 +320,7 @@ function cycleView() {
   world.setView(viewMode);
 }
 
+const _worldUp = new THREE.Vector3(0, 1, 0);
 const _forward = new THREE.Vector3();
 const _camPos = new THREE.Vector3();
 const _camTarget = new THREE.Vector3();
@@ -282,9 +339,11 @@ function updateCamera(alpha) {
 }
 
 function render(alpha) {
+  world.setActiveGate(missions.activeGateIndex());
   world.update(alpha, sim);
   instruments.update(sim);
   audio.update(sim);
+  if (sim.screen === "flying") updateMissionBanner();
   updateCamera(alpha);
   renderer.render(scene, camera);
 }
@@ -355,7 +414,7 @@ function onKey(e) {
   } else if (sim.screen === "paused") {
     if (k === "Backspace") { e.preventDefault(); setScreen("title"); }
   } else if (sim.screen === "debrief") {
-    if (k === "Enter" || k === " ") { e.preventDefault(); setScreen("briefing"); }
+    if (k === "Enter" || k === " ") { e.preventDefault(); beginFlight(); }
     if (k === "Backspace") { e.preventDefault(); setScreen("title"); }
   }
 }
@@ -399,7 +458,9 @@ function init() {
   document.getElementById("resume-btn").addEventListener("click", pauseOrResume);
   document.getElementById("briefing-back-btn").addEventListener("click", () => setScreen("title"));
   document.getElementById("pause-quit-btn").addEventListener("click", () => setScreen("title"));
-  document.getElementById("retry-btn").addEventListener("click", () => setScreen("briefing"));
+  // Retry drops straight back into the same mission (same airframe/weather);
+  // the ghost TITLE button returns to the menu to reconfigure.
+  document.getElementById("retry-btn").addEventListener("click", beginFlight);
   document.getElementById("debrief-menu-btn").addEventListener("click", () => setScreen("title"));
   document.getElementById("mute-btn").addEventListener("click", toggleMute);
   document.getElementById("back-link").addEventListener("click", (e) => { e.preventDefault(); location.href = "../index.html"; });

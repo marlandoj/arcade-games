@@ -238,7 +238,21 @@
   .ofs-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 20px; }
   .ofs-cta.ghost { border-color: rgba(255,255,255,0.25); color: var(--dim); text-shadow: none; font-size: 10px; padding: 10px 18px; }
 
+  /* ── Mission banner (top-centre, live objective) ─────────── */
+  #mission-banner {
+    position: fixed; top: 52px; left: 50%; transform: translateX(-50%); z-index: 35;
+    display: none; align-items: center; gap: 12px; pointer-events: none;
+    background: rgba(4,7,13,0.72); border: 1px solid rgba(34,211,238,0.35);
+    border-radius: 8px; padding: 7px 14px; backdrop-filter: blur(6px);
+    font-family: var(--mono); text-shadow: 0 0 6px rgba(34,211,238,0.35);
+  }
+  #mission-banner-label { font-family: var(--pixel); font-size: 9px; color: var(--cyan); letter-spacing: 0.12em; }
+  #mission-banner-detail { font-size: 13px; color: var(--ink); }
+  #mission-banner-best { font-size: 9px; color: var(--amber); font-family: var(--pixel); letter-spacing: 0.1em; }
+
   /* ── Debrief ─────────────────────────────────────────────── */
+  .ofs-debrief-high { font-family: var(--pixel); font-size: 9px; color: var(--dim); letter-spacing: 0.12em; margin-top: 18px; }
+  .ofs-record { color: var(--amber); text-shadow: 0 0 12px var(--amber); animation: ofs-blink 0.6s steps(1) infinite; }
   .ofs-debrief-title { font-family: var(--pixel); font-size: clamp(18px, 3.4vw, 30px); color: var(--ink); margin-bottom: 14px; letter-spacing: 0.08em; }
   .ofs-debrief-grade { font-family: var(--pixel); font-size: clamp(48px, 10vw, 88px); line-height: 1; margin: 6px 0; }
   .ofs-debrief-grade.grade-S { color: var(--amber); text-shadow: 0 0 20px var(--amber); }
@@ -279,6 +293,13 @@
 <button id="mute-btn" title="Mute (M)" aria-pressed="false">🔊</button>
 
 <div id="hud"></div>
+
+<!-- Live mission objective banner (shown only while flying) -->
+<div id="mission-banner">
+  <span id="mission-banner-label"></span>
+  <span id="mission-banner-detail"></span>
+  <span id="mission-banner-best"></span>
+</div>
 
 <!-- Controls reference — reachable from the shell (button or C key) -->
 <div id="controls-modal" role="dialog" aria-modal="true" aria-label="Controls reference">
@@ -330,10 +351,10 @@
   <section class="ofs-screen" id="screen-title">
     <div class="ofs-logo">OPENFLIGHT<br />SIM</div>
     <div class="ofs-sub">— STUDY-LEVEL BROWSER FLIGHT —</div>
-    <div class="ofs-tag">A fixed-step rigid-body flight simulator built by the Zouroboros Software Factory on open-weights models. ISA atmosphere, 6-DOF flight dynamics, three airframes, and a ground-reaction model fly over seeded procedural terrain with a marked airfield, PAPI, and layered sky.</div>
+    <div class="ofs-tag">A fixed-step rigid-body flight simulator built by the Zouroboros Software Factory. ISA atmosphere, 6-DOF flight dynamics, three airframes, and a ground-reaction model fly over seeded procedural terrain with a marked airfield, PAPI, and layered sky.</div>
     <button class="ofs-cta" id="start-btn">▶ START</button>
     <div class="ofs-hint"><kbd>Enter</kbd>/<kbd>Space</kbd> begin &nbsp; <kbd>P</kbd> pause &nbsp; <kbd>C</kbd> controls &nbsp; <kbd>Esc</kbd> back to arcade</div>
-    <div class="ofs-credit">OFS-004 · SIX-PACK · HUD · WEBAUDIO · INPUT · v0.4.0</div>
+    <div class="ofs-credit">OFS-005 · MISSIONS · GATES · LANDING GRADE · DEBRIEF · v0.5.0</div>
   </section>
 
   <!-- Briefing -->
