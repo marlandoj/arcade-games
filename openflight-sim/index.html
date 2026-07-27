@@ -199,8 +199,12 @@
   /* ── Screens ─────────────────────────────────────────────── */
   #screen-root { position: fixed; inset: 0; z-index: 50; }
   .ofs-screen {
-    position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+    position: fixed; inset: 0; display: none; align-items: center; justify-content: safe center;
     flex-direction: column; text-align: center; padding: 28px;
+    /* The briefing grid is taller than a phone viewport (≈928 px on a 844 px
+       screen), which put LAUNCH below the fold with body overflow hidden — the
+       game could not be started by touch. Let the screen scroll instead. */
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
     background: radial-gradient(ellipse at 50% 25%, rgba(10,30,50,0.55), rgba(3,5,12,0.94));
     backdrop-filter: blur(5px);
   }

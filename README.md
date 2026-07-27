@@ -8,6 +8,7 @@ A registry-driven HTML5 arcade hub. Add a game by dropping a directory and one e
 
 | ID | Title | Features |
 |----|-------|----------|
+| `openflight-sim` | **OpenFlight Sim** — Study-Level Browser Flight | Fixed-step 6-DOF rigid body, ISA atmosphere + wind/gust/turbulence, spring-damper gear, 3 airframes, procedural terrain + PAPI, analog six-pack + glass HUD, 4 scored missions, graded landings |
 | `opus5-flight-sim` | **Opus 5 Flight Sim** — Six Degrees of Freedom | 6-DOF rigid-body aerodynamics, ISA atmosphere, wind/gust/turbulence, 3 airframes, analog six-pack + HUD, live PAPI, 5 missions, graded landings |
 | `serpent-shore-rally` | **Serpent Shore Rally** — Tidebreaker Coast Kart Racing | Pseudo-3D beach racing, 5 rivals, drift boosts, item boxes, ramps, shortcut, mobile controls |
 | `cow-abductor` | **Cow Abductors** — 3D UFO Farm Heist | 3D Three.js, tractor beam, combos, minimap, power-ups, mobile joystick |

@@ -24,6 +24,7 @@
 import { createTerrain, papiIndication, PAPI_GLIDEPATH_DEG } from "../openflight-sim/src/terrain.js";
 import { createFlightModel } from "../openflight-sim/src/flight-model.js";
 import { atmosphere } from "../openflight-sim/src/atmosphere.js";
+import { MISSIONS } from "../openflight-sim/src/missions.js";
 
 const RUNWAY = { threshold: { x: 0, z: 0 }, heading: 0, length: 1500, width: 30, elevation: 0 };
 const FIXED_DT = 1 / 120;
@@ -74,6 +75,39 @@ console.log("\n[2] Airfield flattening");
   assert(variesAway, "terrain departs from the datum away from the airfield");
   // Blend is monotone-ish: flat at centre, full terrain far out.
   assert(t.airfieldBlend(0, 750) === 0 && t.airfieldBlend(0, 6000) === 1, "flatten blend is 0 at field, 1 far away");
+}
+
+// ── 2b. The whole final-approach corridor is below the glidepath (OFS-006) ──
+// Release verification found the landing mission spawning *inside* an fBm ridge:
+// the corridor was only levelled within the 520 m flat radius of the threshold,
+// so terrain reached ~107 m where the 3° path is ~84 m and the run ended with a
+// terrain strike on the first fixed step. Assert clearance over the full corridor
+// the mission actually flies, laterally as well as on the centreline.
+console.log("\n[2b] Landing approach corridor clears the glidepath");
+{
+  const t = createTerrain({ seed: 20260726, runway: RUNWAY });
+  const landing = MISSIONS.find((m: any) => m.type === "landing") as any;
+  const spawnZ = landing?.spawn?.pos?.[2] ?? -1800;
+  const spawnY = landing?.spawn?.pos?.[1] ?? 96;
+  const tanGp = Math.tan((PAPI_GLIDEPATH_DEG * Math.PI) / 180);
+
+  assert(t.heightAt(0, spawnZ) < spawnY - 5,
+    `the landing spawn is airborne, not inside terrain (ground ${t.heightAt(0, spawnZ).toFixed(1)} m < spawn ${spawnY} m)`);
+
+  // Sweep the corridor from the spawn fix to the threshold, ±150 m either side
+  // of the centreline, and require terrain to stay clear of the 3° path.
+  let minClear = Infinity;
+  let minAt = 0;
+  for (let z = spawnZ; z <= -50; z += 25) {
+    const glidepath = RUNWAY.elevation + -z * tanGp;
+    for (const x of [-150, -75, 0, 75, 150]) {
+      const clear = glidepath - t.heightAt(x, z);
+      if (clear < minClear) { minClear = clear; minAt = z; }
+    }
+  }
+  assert(minClear > 0,
+    `terrain stays below the ${PAPI_GLIDEPATH_DEG}° glidepath across the corridor ` +
+    `(min clearance ${minClear.toFixed(1)} m at z=${minAt} m)`);
 }
 
 // ── 3. Terrain queried by the flight model (shared surface) ─────────────────
