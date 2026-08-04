@@ -8,6 +8,7 @@ A registry-driven HTML5 arcade hub. Add a game by dropping a directory and one e
 
 | ID | Title | Features |
 |----|-------|----------|
+| `sol-racer` | **Sol Racer** — Cel-Shaded Solar Ocean Racing | Deterministic 60 Hz race simulation, 4 boats, 3 laps, ordered checkpoints, procedural Gerstner ocean, buoyancy and drift boosts, 3 AI personalities, articulated riders, synthesized audio, keyboard/gamepad/touch controls |
 | `vyon-boat-racer` | **Vyon Boat Racer** — Cel-Shaded Ocean Racing | Deterministic fixed-step race simulation, 4 boats, 3 laps, ordered checkpoints, procedural cel-shaded water, wave buoyancy, drift boosts, synthesized audio, keyboard/gamepad controls |
 | `iron-meridian` | **Iron Meridian** — Arena FPS | Deterministic combat, pathfinding bots, 3 weapons, pickups, pooled effects, procedural audio, full HUD, 529 tests and 18 browser scenarios |
 | `openflight-sim` | **OpenFlight Sim** — Study-Level Browser Flight | Fixed-step 6-DOF rigid body, ISA atmosphere + wind/gust/turbulence, spring-damper gear, 3 airframes, procedural terrain + PAPI, analog six-pack + glass HUD, 4 scored missions, graded landings |
