@@ -1,0 +1,114 @@
+{
+  "schema": "iron-meridian/effects-manifest@1",
+  "ticket": "IMF-07",
+  "assets": [
+    {
+      "id": "tex.fx.particle.soft",
+      "kind": "texture",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Soft radial-falloff sprite for pickup, respawn, and death burst particles.",
+      "generator": "src/presentation/sprites.ts:createSoftParticleTexture",
+      "parameters": "size from quality profile (32/64/128); quadratic radial falloff; deterministic, no seed"
+    },
+    {
+      "id": "tex.fx.particle.spark",
+      "kind": "texture",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Hot-cored warm spark sprite for impact burst particles.",
+      "generator": "src/presentation/sprites.ts:createSparkTexture",
+      "parameters": "size from quality profile (32/64/128); quartic core plus 1.5-power glow; deterministic, no seed"
+    },
+    {
+      "id": "tex.fx.decal.scorch",
+      "kind": "texture",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Dark irregular-edged scorch mark stamped on surfaces at impact points.",
+      "generator": "src/presentation/sprites.ts:createScorchTexture",
+      "parameters": "size from quality profile (32/64/128); 24 edge spokes jittered by core RNG seed 0x1a07"
+    },
+    {
+      "id": "tex.fx.flash.star",
+      "kind": "texture",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Four-pointed star sprite rendered at the muzzle when a weapon fires.",
+      "generator": "src/presentation/sprites.ts:createFlashTexture",
+      "parameters": "size from quality profile (32/64/128); crossed falloff lobes plus quintic core; deterministic, no seed"
+    },
+    {
+      "id": "tex.fx.ring.pulse",
+      "kind": "texture",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Thin luminous ring sprite expanded along the ground by burst effects.",
+      "generator": "src/presentation/sprites.ts:createRingTexture",
+      "parameters": "size from quality profile (32/64/128); band radius 0.72, thickness 0.16; deterministic, no seed"
+    },
+    {
+      "id": "fx.impact.burst",
+      "kind": "effect",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Pooled spark scatter into the hemisphere around a hit surface normal.",
+      "generator": "src/presentation/impacts.ts:ImpactBurst",
+      "parameters": "particle count from quality profile (8/20/36); life 0.45 s; additive blending"
+    },
+    {
+      "id": "fx.impact.decal",
+      "kind": "effect",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Pooled scorch decal stamped on the impacted surface; disabled on the low tier.",
+      "generator": "src/presentation/impacts.ts:ScorchDecal",
+      "parameters": "life 7 s with 2 s fade; enabled by quality profile decalsEnabled"
+    },
+    {
+      "id": "fx.tracer",
+      "kind": "effect",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Pooled two-vertex additive line brightening a hitscan shot path.",
+      "generator": "src/presentation/tracers.ts:Tracer",
+      "parameters": "life 0.09 s; endpoints rewritten in place per shot"
+    },
+    {
+      "id": "fx.muzzle.flash",
+      "kind": "effect",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Pooled muzzle sprite with seeded roll/scale; adds a point light on the high tier only.",
+      "generator": "src/presentation/muzzle-flash.ts:MuzzleFlash",
+      "parameters": "life 0.06 s; light gated by quality profile muzzleFlashLight"
+    },
+    {
+      "id": "fx.burst.pickup",
+      "kind": "effect",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Pooled cyan particle-and-ring pulse when a combatant collects a pickup.",
+      "generator": "src/presentation/bursts.ts:PICKUP_BURST",
+      "parameters": "speed 2.2 m/s, upward bias 0.55, life 0.5 s, ring 1.4 m"
+    },
+    {
+      "id": "fx.burst.respawn",
+      "kind": "effect",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Pooled green upward column-and-ring pulse when a combatant respawns.",
+      "generator": "src/presentation/bursts.ts:RESPAWN_BURST",
+      "parameters": "speed 3 m/s, upward bias 0.85, life 0.7 s, ring 1.8 m"
+    },
+    {
+      "id": "fx.burst.death",
+      "kind": "effect",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Pooled red spherical scatter-and-ring pulse when a combatant dies.",
+      "generator": "src/presentation/bursts.ts:DEATH_BURST",
+      "parameters": "speed 3.4 m/s, upward bias 0.25, life 0.6 s, ring 2.2 m"
+    }
+  ]
+}
