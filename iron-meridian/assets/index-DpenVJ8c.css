@@ -1,0 +1,1 @@
+html,body,#root{background:#05070c;width:100%;height:100%;margin:0;padding:0;overflow:hidden}.app-surface{position:fixed;inset:0;overflow:hidden}.canvas-host{z-index:0;position:absolute;inset:0}.ui-layer{z-index:1;position:absolute;inset:0}:focus-visible{outline-offset:2px;outline:2px solid #58a6ff}::selection{background:#58a6ff59}

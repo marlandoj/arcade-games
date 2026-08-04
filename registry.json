@@ -1,7 +1,67 @@
 {
   "version": 1,
-  "updated": "2026-07-27",
+  "updated": "2026-08-04",
   "games": [
+    {
+      "id": "vyon-boat-racer",
+      "title": "VYON BOAT RACER",
+      "subtitle": "Cel-Shaded Ocean Racing — Factory Build",
+      "description": "Race four boats through ordered ocean checkpoints over three laps in a deterministic, fixed-step arcade simulation. Procedural cel-shaded water, buoyant wave physics, drift boosts, synthesized audio, keyboard and gamepad controls, and a complete countdown-to-podium race lifecycle.",
+      "path": "./vyon-boat-racer/index.html",
+      "thumbnail": "./thumbnails/vyon-boat-racer.png",
+      "icon": "🛥️",
+      "accent": "#ff5a4f",
+      "tags": [
+        "racing",
+        "3d",
+        "arcade",
+        "boats",
+        "single-player"
+      ],
+      "controls": [
+        "W / S or arrows — throttle / reverse",
+        "A / D or arrows — steer",
+        "Space — drift",
+        "P / Esc — pause",
+        "R — restart",
+        "Gamepad — supported"
+      ],
+      "status": "live",
+      "featured": true,
+      "added": "2026-08-04"
+    },
+    {
+      "id": "iron-meridian",
+      "title": "IRON MERIDIAN",
+      "subtitle": "Arena FPS — Factory Build",
+      "description": "A free-for-all arena shooter built end-to-end by the Zouroboros Software Factory: deterministic combat core, pathfinding AI bots with perception and difficulty tiers, three hitscan/projectile weapons, pickups, pooled effects with quality tiers, procedural audio, and a full HUD with kill feed and leaderboard. First to 30 kills wins. 529 tests and an 18-scenario Playwright e2e suite behind it.",
+      "path": "./iron-meridian/index.html",
+      "thumbnail": "./thumbnails/iron-meridian.png",
+      "icon": "🎯",
+      "accent": "#f59e0b",
+      "tags": [
+        "fps",
+        "3d",
+        "arena",
+        "bots",
+        "single-player"
+      ],
+      "controls": [
+        "WASD / arrows — move",
+        "Mouse — look, click to fire",
+        "Right mouse — aim down sights",
+        "Space — jump",
+        "Shift — sprint",
+        "Ctrl / C — crouch",
+        "R — reload",
+        "Q — switch weapon",
+        "G — grenade",
+        "Esc — pause"
+      ],
+      "status": "live",
+      "featured": false,
+      "added": "2026-08-01"
+    },
     {
       "id": "openflight-sim",
       "title": "OPENFLIGHT SIM",
@@ -59,7 +119,7 @@
         "P — pause"
       ],
       "status": "live",
-      "featured": true,
+      "featured": false,
       "added": "2026-07-25"
     },
     {

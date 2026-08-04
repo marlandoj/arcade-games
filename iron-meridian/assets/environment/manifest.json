@@ -1,0 +1,86 @@
+{
+  "schema": "iron-meridian/environment-manifest@1",
+  "ticket": "IMF-02",
+  "assets": [
+    {
+      "id": "mat.floor.concrete",
+      "kind": "material",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Ground plane physically-based material for the arena floor.",
+      "generator": "src/render/scene.ts:buildMaterials"
+    },
+    {
+      "id": "mat.wall.panel",
+      "kind": "material",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Perimeter wall panelling that bounds the play envelope.",
+      "generator": "src/render/scene.ts:buildMaterials"
+    },
+    {
+      "id": "mat.cover.crate",
+      "kind": "material",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Crate cover scattered along the three lanes.",
+      "generator": "src/render/scene.ts:buildMaterials"
+    },
+    {
+      "id": "mat.ramp.metal",
+      "kind": "material",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Sloped metal ramps forming the two vertical routes.",
+      "generator": "src/render/scene.ts:buildMaterials"
+    },
+    {
+      "id": "mat.platform.grate",
+      "kind": "material",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Elevated catwalk, tower, and building-roof platforms.",
+      "generator": "src/render/scene.ts:buildMaterials"
+    },
+    {
+      "id": "mat.bridge.metal",
+      "kind": "material",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Bridges connecting the elevated routes to the central roof.",
+      "generator": "src/render/scene.ts:buildMaterials"
+    },
+    {
+      "id": "mat.building.panel",
+      "kind": "material",
+      "source": "procedural",
+      "license": "CC0-1.0",
+      "use": "Central building interior and exterior wall panelling.",
+      "generator": "src/render/scene.ts:buildMaterials"
+    },
+    {
+      "id": "tex.grid.floor",
+      "kind": "texture",
+      "source": "generated",
+      "license": "CC0-1.0",
+      "use": "Procedural grid data-texture applied to the floor for scale readability.",
+      "generator": "src/render/textures.ts:createGridTexture"
+    },
+    {
+      "id": "tex.noise.panel",
+      "kind": "texture",
+      "source": "generated",
+      "license": "CC0-1.0",
+      "use": "Procedural value-noise data-texture breaking up wall and platform surfaces.",
+      "generator": "src/render/textures.ts:createNoiseTexture"
+    },
+    {
+      "id": "sky.gradient.dusk",
+      "kind": "sky",
+      "source": "generated",
+      "license": "CC0-1.0",
+      "use": "Vertical gradient background and fog colour for the arena backdrop.",
+      "generator": "src/render/scene.ts:buildSky"
+    }
+  ]
+}
